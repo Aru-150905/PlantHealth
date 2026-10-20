@@ -174,7 +174,15 @@ export default function FarmerHome() {
               {result.unknown ? (
                 <p className="text-sm text-gray-400">{result.unknown_reason === "window variance below threshold" ? "Check back in a few hours — the signal isn't clear enough yet." : "Not enough signal to say yet."}</p>
               ) : result.diagnosis_remedy_available && farmer ? (
-                <p className="text-sm text-gray-600">{WATERING_REMEDY[farmer.watering_method]}</p>
+                <>
+                  <p className="text-sm text-gray-600">{WATERING_REMEDY[farmer.watering_method]}</p>
+                  {result.severity_timeline_available && result.severity && result.severity !== "none" && (
+                    <p className="text-sm text-gray-600 mt-1">
+                      Severity: <span className="font-medium capitalize">{result.severity}</span>.{" "}
+                      {result.estimated_timeline}
+                    </p>
+                  )}
+                </>
               ) : (
                 <p className="text-sm text-gray-400">{t("farmer.home.upgrade_for_remedy")}</p>
               )}

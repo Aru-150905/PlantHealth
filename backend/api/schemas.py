@@ -313,3 +313,26 @@ class AdminSummaryOut(BaseModel):
     devices: list[AdminDeviceOut]
     model_version: ModelVersionOut | None
     prediction_volume: list[PredictionVolumeDay]
+
+
+# -------------------------------------------------------------------------------- alerts (section 9, stubbed delivery)
+
+
+class AlertPreferenceRequest(BaseModel):
+    alert_email: EmailStr | None = None
+    alert_webhook_url: str | None = None
+
+
+class AlertPreferenceOut(BaseModel):
+    alerts_tier: str  # "none" | "email" | "email_webhook" — what this tier allows
+    alert_email: str | None
+    alert_webhook_url: str | None
+    email_allowed: bool
+    webhook_allowed: bool
+
+
+class TestAlertOut(BaseModel):
+    simulated: bool  # always True — no real delivery in this build, see backend/api/routers/alerts.py
+    channel: str
+    destination: str
+    message: str

@@ -68,6 +68,12 @@ class Tenant(Base):
     onboarding_completed: Mapped[bool] = mapped_column(Boolean, default=False)
     language: Mapped[str] = mapped_column(String, default="en")  # section 5 Q9 (farmer); settings-changeable
 
+    # section 9's "Alerts: No / Email / Email+webhook" row. Delivery itself is stubbed — no
+    # SMTP/webhook infrastructure exists in this local-first build (same spirit as "stub the
+    # billing" in the brief's Do-Not list) — see backend/api/routers/alerts.py.
+    alert_email: Mapped[str | None] = mapped_column(String, nullable=True)
+    alert_webhook_url: Mapped[str | None] = mapped_column(String, nullable=True)
+
     users: Mapped[list["User"]] = relationship(back_populates="tenant", cascade="all, delete-orphan")
     devices: Mapped[list["Device"]] = relationship(back_populates="tenant", cascade="all, delete-orphan")
     plants: Mapped[list["Plant"]] = relationship(back_populates="tenant", cascade="all, delete-orphan")

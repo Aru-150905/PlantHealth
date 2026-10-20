@@ -61,7 +61,23 @@ history shows what worked at each stage. Status below.
       real browser (flagged a device live, watched a prediction appear in the volume chart
       after making it from another account). See
       `~/Desktop/PlantHealth-Decisions/11-admin-dashboard.md`. 47 backend tests.
-- [ ] 8. Tier gating end to end + demo-data banner
+- [x] **8. Tier gating end to end + demo-data banner** — a row-by-row audit against
+      section 9's full table (not just re-checking what steps 3-7 already enforced) found 3
+      real gaps: Pro's "calibration curve" was indistinguishable from a probability vector
+      (now serves the actual reliability diagram from step 2's training run), "severity and
+      timeline" on diagnoses didn't exist anywhere (now computed and shown on both farmer
+      and lab views), and alerts were entirely unbuilt (now a tier-gated preference +
+      honestly-simulated test-send — delivery is stubbed, same reasoning as the brief's
+      "stub the billing," with every response saying plainly that nothing was actually
+      sent). Fixing the calibration curve also caught a real bug (`<img src>` can't carry
+      the auth header — fixed with an authenticated blob fetch). The demo-data banner is
+      unconditional on every data-bearing view. Added `run.sh` for the brief's "everything
+      runs locally with one command." See
+      `~/Desktop/PlantHealth-Decisions/12-step8-tier-gating-audit.md`. 53 backend tests.
+
+**The full build order is complete.** All 8 steps shipped, each committed and pushed
+separately, each with its own decision-log writeup of what was built and why. See
+`~/Desktop/PlantHealth-Decisions/` for the complete build journal.
 
 ## Repo layout
 
@@ -95,6 +111,23 @@ pip install -r requirements.txt
 bundled in the PyPI wheel. Normally `brew install libomp` fixes this. If Homebrew can't
 fetch a bottle for your macOS version (older macOS, no bottle built), see
 `~/Desktop/PlantHealth-Decisions/04-xgboost-libomp-workaround.md` for a bottle-free fix.
+
+### Run everything with one command
+
+Once the venv above is created (and `pip install -r requirements.txt` has run):
+
+```bash
+./run.sh
+```
+
+Generates the synthetic dataset and trains the model if they don't exist yet (first run
+only — several minutes), seeds demo tenants, and starts both the API
+(`http://127.0.0.1:8000/docs`) and the frontend (`http://localhost:5173`) together. Ctrl+C
+stops both. Demo logins: `basic@demo.planthealth` / `premium@demo.planthealth` /
+`pro@demo.planthealth` / `both@demo.planthealth`, password `demo-password-123` for all.
+
+The sections below run each piece individually — useful when iterating on one layer, or to
+understand what `run.sh` is actually doing.
 
 ### Generate the demo dataset
 
@@ -144,5 +177,3 @@ npm run dev
 Opens at `http://localhost:5173` (needs the API running — see above). Demo logins:
 `basic@demo.planthealth` / `premium@demo.planthealth` / `pro@demo.planthealth` /
 `both@demo.planthealth`, password `demo-password-123` for all. See `frontend/README.md`.
-
-(A single top-level one-command run for both services lands with step 5.)

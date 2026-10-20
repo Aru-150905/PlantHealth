@@ -151,9 +151,30 @@ def shape_unknown(tier: Tier, reason: str) -> dict:
         "unknown_reason": reason,
         "diagnosis_remedy_available": False,
         "severity_timeline_available": False,
+        "severity": None,
+        "estimated_timeline": None,
         "shap_available": False,
         "raw_export": limits.raw_export,
     }
+
+
+# Pro's diagnosis extra (section 9: "Yes + severity and timeline"). Timelines are general
+# physiological expectations from the literature this project's physiology is grounded in
+# (see backend/data/README.md), not measured from this deployment's own plants — stated
+# here as guidance, same "general guidance only, not a diagnosis" framing as the remedy text
+# itself (section 8).
+_TIMELINE_BY_CLASS = {
+    "drought": "Develops over days; expect visible improvement within 3-5 days of adequate watering.",
+    "heat": "Fast-onset, often within hours; usually eases within 24-48h once temperature/ventilation improve.",
+    "salinity": "Develops over days to weeks; recovery after flushing the root zone can take 1-2 weeks.",
+}
+
+
+def _severity_and_timeline(class_label: str, stressed: bool, confidence: float) -> tuple[str, str | None]:
+    if not stressed:
+        return "none", None
+    severity = "severe" if confidence >= 0.85 else "moderate" if confidence >= 0.6 else "mild"
+    return severity, _TIMELINE_BY_CLASS.get(class_label)
 
 
 def shape_prediction(tier: Tier, class_label: str, stressed: bool, proba: dict[str, float]) -> dict:
@@ -183,6 +204,13 @@ def shape_prediction(tier: Tier, class_label: str, stressed: bool, proba: dict[s
 
     out["diagnosis_remedy_available"] = limits.diagnosis_and_remedy
     out["severity_timeline_available"] = limits.diagnosis_severity_timeline
+    if limits.diagnosis_severity_timeline:
+        severity, timeline = _severity_and_timeline(class_label, stressed, confidence)
+        out["severity"] = severity
+        out["estimated_timeline"] = timeline
+    else:
+        out["severity"] = None
+        out["estimated_timeline"] = None
     out["shap_available"] = limits.shap_explanations
     out["raw_export"] = limits.raw_export
     return out

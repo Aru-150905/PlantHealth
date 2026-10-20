@@ -40,6 +40,26 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>
 }
 
+/** <img src="..."> can't carry an Authorization header, so an auth-gated image endpoint
+ * (the calibration curve) needs to be fetched like any other authenticated request and
+ * turned into an object URL — a plain <img src={api.calibrationCurveUrl()}> 401s silently
+ * and just shows a broken image. Caller must URL.revokeObjectURL() the result when done. */
+async function fetchAuthenticatedBlobUrl(path: string): Promise<string> {
+  const headers: Record<string, string> = {}
+  if (authToken) headers["Authorization"] = `Bearer ${authToken}`
+  const res = await fetch(`${BASE}${path}`, { headers })
+  if (!res.ok) {
+    let detail: unknown
+    try {
+      detail = (await res.json()).detail
+    } catch {
+      detail = res.statusText
+    }
+    throw new ApiError(res.status, detail)
+  }
+  return URL.createObjectURL(await res.blob())
+}
+
 /** URLSearchParams (used only by login(), which needs OAuth2PasswordRequestForm's
  * application/x-www-form-urlencoded body) must pass through untouched — JSON.stringify-ing
  * it here would silently serialize to "{}" (URLSearchParams has no enumerable own
@@ -158,6 +178,8 @@ export interface PredictionResult {
   unknown_reason?: string
   diagnosis_remedy_available: boolean
   severity_timeline_available: boolean
+  severity: string | null
+  estimated_timeline: string | null
   shap_available: boolean
   raw_export: string
 }
@@ -291,6 +313,21 @@ export interface AdminSummary {
   prediction_volume: PredictionVolumeDay[]
 }
 
+export interface AlertPreference {
+  alerts_tier: string
+  alert_email: string | null
+  alert_webhook_url: string | null
+  email_allowed: boolean
+  webhook_allowed: boolean
+}
+
+export interface TestAlertResult {
+  simulated: boolean
+  channel: string
+  destination: string
+  message: string
+}
+
 export interface TierLimits {
   max_sentinel_devices: number | null
   max_plants_covered: number | null
@@ -344,6 +381,12 @@ export const api = {
   adminSummary: () => get<AdminSummary>("/admin/summary"),
   flagDevice: (deviceId: string, artefactFlagged: boolean) =>
     put<AdminDevice>(`/admin/devices/${deviceId}/flag`, { artefact_flagged: artefactFlagged }),
+
+  calibrationCurveBlobUrl: () => fetchAuthenticatedBlobUrl("/tenants/me/calibration-curve.png"),
+  getAlertPreference: () => get<AlertPreference>("/tenants/me/alerts"),
+  setAlertPreference: (body: { alert_email?: string | null; alert_webhook_url?: string | null }) =>
+    put<AlertPreference>("/tenants/me/alerts", body),
+  testAlert: () => post<TestAlertResult>("/tenants/me/alerts/test", {}),
 
   del,
 }

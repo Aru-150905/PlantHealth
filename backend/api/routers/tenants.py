@@ -174,3 +174,26 @@ def get_confound_panel(tenant: Tenant = Depends(get_current_tenant), db: Session
         is_synthetic=True, chamber_type=chamber_type, confound_panel_enabled=enabled,
         n_plants_analyzed=len(plants), by_class=stats, flagged=flagged, flag_reason=reason,
     )
+
+
+@router.get("/me/calibration-curve.png")
+def get_calibration_curve(tenant: Tenant = Depends(get_current_tenant)):
+    """Section 9: Pro's confidence-score row is 'Exact % + calibration curve' — a MODEL
+    property (a reliability diagram over many held-out predictions), not something any
+    single prediction response can carry. Serves the actual reliability curve
+    backend/ml/train.py generated from the leave-one-plant-out out-of-fold predictions
+    (backend/ml/reports/calibration_curve.png), not a stand-in. 403 below Pro, same
+    upgrade_pitch shape as every other tier-gated endpoint in this API."""
+    if limits_for(tenant.tier).confidence_detail != "exact_pct_plus_calibration_curve":
+        raise HTTPException(status_code=403, detail={
+            "error": "calibration_curve_not_available",
+            "message": f"The calibration curve isn't included in the {tenant.tier.value} plan.",
+            "upgrade_pitch": "Pro adds the full calibration curve, SHAP explanations, and unlimited devices/plants.",
+        })
+    from fastapi.responses import FileResponse
+
+    from ..config import settings
+    path = settings.ml_models_dir.parent / "reports" / "calibration_curve.png"
+    if not path.exists():
+        raise HTTPException(status_code=503, detail="Calibration curve not generated yet — run backend/ml/train.py.")
+    return FileResponse(path, media_type="image/png")

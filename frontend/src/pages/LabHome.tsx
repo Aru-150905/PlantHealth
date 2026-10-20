@@ -38,6 +38,7 @@ export default function LabHome() {
   const [explain, setExplain] = useState<ExplainOut | null>(null)
   const [explainError, setExplainError] = useState<string | null>(null)
   const [confound, setConfound] = useState<ConfoundPanelOut | null>(null)
+  const [calibrationUrl, setCalibrationUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
   // see FarmerHome.tsx for why this guard exists — StrictMode double-invoke + real POSTs
@@ -68,6 +69,15 @@ export default function LabHome() {
           } catch (err) {
             setExplainError(err instanceof ApiError ? (err.detail as { message?: string })?.message ?? String(err.detail) : null)
           }
+          if (pred.result.full_probability_vector) {
+            // Pro tier only (same gate the backend enforces) — fetched as an authenticated
+            // blob, not a plain <img src>, which can't carry the Authorization header
+            try {
+              setCalibrationUrl(await api.calibrationCurveBlobUrl())
+            } catch {
+              // non-critical — the card just won't render
+            }
+          }
         }
         try {
           setConfound(await api.confoundPanel())
@@ -82,6 +92,12 @@ export default function LabHome() {
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  useEffect(() => {
+    return () => {
+      if (calibrationUrl) URL.revokeObjectURL(calibrationUrl)
+    }
+  }, [calibrationUrl])
 
   const lab = onboarding?.lab
   const canExport = result?.raw_export && result.raw_export !== "none"
@@ -152,7 +168,21 @@ export default function LabHome() {
                 </div>
               </div>
             )}
+
+            {result.severity_timeline_available && result.severity && result.severity !== "none" && (
+              <p className="text-sm text-gray-600 font-mono">
+                severity = {result.severity} · timeline = {result.estimated_timeline}
+              </p>
+            )}
           </div>
+        )}
+
+        {/* full_probability_vector is only present at the exact_pct_plus_calibration_curve
+            tier (Pro) — same gate the calibration curve endpoint itself enforces server-side */}
+        {!loading && result?.full_probability_vector && calibrationUrl && (
+          <Card title="Calibration curve" subtitle="Reliability diagram over leave-one-plant-out out-of-fold predictions">
+            <img src={calibrationUrl} alt="Calibration reliability curve" className="w-full rounded-lg border border-gray-100" />
+          </Card>
         )}
 
         {!loading && plant && (
