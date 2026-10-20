@@ -80,7 +80,10 @@ export default function Settings() {
           <p className="text-sm text-gray-500 capitalize">{tenant.tier}</p>
         </div>
 
-        <button onClick={logout} className="text-sm text-stress-600 font-medium">Log out</button>
+        <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+          <Link to="/admin" className="text-sm text-gray-400">Admin dashboard →</Link>
+          <button onClick={logout} className="text-sm text-stress-600 font-medium">Log out</button>
+        </div>
       </div>
     </div>
   )

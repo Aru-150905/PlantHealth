@@ -1,5 +1,6 @@
 import type { ReactNode } from "react"
 import { Navigate, Route, Routes } from "react-router-dom"
+import AdminDashboard from "./pages/AdminDashboard"
 import FarmerHome from "./pages/FarmerHome"
 import LabHome from "./pages/LabHome"
 import Login from "./pages/Login"
@@ -47,6 +48,9 @@ export default function App() {
       <Route path="/farmer" element={<Gate><FarmerHome /></Gate>} />
       <Route path="/lab" element={<Gate><LabHome /></Gate>} />
       <Route path="/settings" element={<RequireAccount><Settings /></RequireAccount>} />
+      {/* admin-ness is enforced server-side (require_admin) — a non-admin here just sees
+          AdminDashboard's own graceful "you don't have access" state, not a client-side gate */}
+      <Route path="/admin" element={<RequireAccount><AdminDashboard /></RequireAccount>} />
       <Route path="/" element={<Gate><HomeRedirect /></Gate>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

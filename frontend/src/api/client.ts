@@ -236,6 +236,61 @@ export interface ConfoundPanelOut {
   flag_reason: string | null
 }
 
+export interface AdminTenant {
+  id: string
+  name: string
+  tier: Tier
+  role: Role
+  suspended: boolean
+  created_at: string
+  n_devices: number
+  device_limit: number | null
+  n_plants_covered: number
+  plants_limit: number | null
+  history_retention_days: number | null
+}
+
+export interface AdminDevice {
+  id: string
+  tenant_id: string
+  tenant_name: string
+  serial: string
+  last_seen_at: string | null
+  battery_pct: number | null
+  signal_quality: number | null
+  electrode_drift_flagged: boolean
+  artefact_flagged: boolean
+}
+
+export interface ModelVersion {
+  version: string
+  is_synthetic: boolean
+  trained_at: string | null
+  window_minutes: number
+  fs_hz: number
+  honest_leave_one_plant_out_accuracy: number | null
+  honest_leave_one_plant_out_macro_f1: number | null
+  confound_ablation_accuracy_points_from_environment: number | null
+  n_tenants_on_version: number
+}
+
+export interface PredictionVolumeDay {
+  date: string
+  healthy: number
+  drought: number
+  heat: number
+  salinity: number
+  total: number
+}
+
+export interface AdminSummary {
+  is_synthetic: boolean
+  tenants: AdminTenant[]
+  devices: AdminDevice[]
+  model_version: ModelVersion | null
+  prediction_volume: PredictionVolumeDay[]
+}
+
 export interface TierLimits {
   max_sentinel_devices: number | null
   max_plants_covered: number | null
@@ -285,6 +340,10 @@ export const api = {
   exportCsvUrl: (plantId: string, durationMinutes: number) =>
     `/api/plants/${plantId}/export.csv?duration_minutes=${durationMinutes}`,
   confoundPanel: () => get<ConfoundPanelOut>("/tenants/me/confound-panel"),
+
+  adminSummary: () => get<AdminSummary>("/admin/summary"),
+  flagDevice: (deviceId: string, artefactFlagged: boolean) =>
+    put<AdminDevice>(`/admin/devices/${deviceId}/flag`, { artefact_flagged: artefactFlagged }),
 
   del,
 }

@@ -54,7 +54,13 @@ history shows what worked at each stage. Status below.
       which recomputes step 2's confound finding live, per tenant, from real predictions
       over the real API, and correctly flagged it again on a 12-plant test tenant. See
       `~/Desktop/PlantHealth-Decisions/10-lab-view-and-confound-panel.md`. 41 backend tests.
-- [ ] 7. Admin dashboard
+- [x] **7. Admin dashboard** — the full section-10 experience: a model registry showing the
+      real honest leave-one-plant-out accuracy and confound ablation, every tenant's usage
+      against their tier's limits, device fleet health, live cross-tenant device
+      artefact-flagging, and a stacked prediction-volume-by-class chart — all verified in a
+      real browser (flagged a device live, watched a prediction appear in the volume chart
+      after making it from another account). See
+      `~/Desktop/PlantHealth-Decisions/11-admin-dashboard.md`. 47 backend tests.
 - [ ] 8. Tier gating end to end + demo-data banner
 
 ## Repo layout

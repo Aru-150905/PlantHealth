@@ -247,3 +247,69 @@ class ConfoundPanelOut(BaseModel):
     by_class: list[ConfoundClassStat]
     flagged: bool
     flag_reason: str | None
+
+
+# -------------------------------------------------------------------------------- admin (section 10)
+
+
+class AdminTenantOut(BaseModel):
+    id: str
+    name: str
+    tier: Tier
+    role: Role
+    suspended: bool
+    created_at: datetime
+    n_devices: int
+    device_limit: int | None  # None = unlimited
+    n_plants_covered: int
+    plants_limit: int | None
+    history_retention_days: int | None
+
+
+class AdminDeviceOut(BaseModel):
+    id: str
+    tenant_id: str
+    tenant_name: str
+    serial: str
+    last_seen_at: datetime | None
+    battery_pct: float | None
+    signal_quality: float | None
+    electrode_drift_flagged: bool
+    artefact_flagged: bool
+
+
+class ArtefactFlagRequest(BaseModel):
+    artefact_flagged: bool
+
+
+class ModelVersionOut(BaseModel):
+    """Section 10: 'Model registry: versions, training date, leave-one-plant-out accuracy
+    per version, which tenants are on which version.' This demo serves exactly one model
+    at a time (no multi-version rollout), so n_tenants_on_version is always every tenant —
+    documented rather than fabricating a rollout history that doesn't exist."""
+    version: str
+    is_synthetic: bool
+    trained_at: datetime | None
+    window_minutes: float
+    fs_hz: float
+    honest_leave_one_plant_out_accuracy: float | None
+    honest_leave_one_plant_out_macro_f1: float | None
+    confound_ablation_accuracy_points_from_environment: float | None
+    n_tenants_on_version: int
+
+
+class PredictionVolumeDay(BaseModel):
+    date: str
+    healthy: int = 0
+    drought: int = 0
+    heat: int = 0
+    salinity: int = 0
+    total: int = 0
+
+
+class AdminSummaryOut(BaseModel):
+    is_synthetic: bool
+    tenants: list[AdminTenantOut]
+    devices: list[AdminDeviceOut]
+    model_version: ModelVersionOut | None
+    prediction_volume: list[PredictionVolumeDay]

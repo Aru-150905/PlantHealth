@@ -40,6 +40,11 @@ Requires the backend running at `http://127.0.0.1:8000` (see `backend/api/README
   a second chart sharing the time axis (never a dual y-axis). `FeatureTable.tsx` (the raw
   feature vector), `ShapPanel.tsx` (Pro — diverging blue/red bars), `ConfoundPanel.tsx`
   (chamber temperature by predicted class, flagging a real detected spread).
+- `src/pages/AdminDashboard.tsx` — section 10: model registry, all tenants' usage against
+  their tier limits, device fleet health with live artefact-flagging, and a stacked
+  prediction-volume-by-class chart. Reachable at `/admin` (linked from Settings); admin-ness
+  is enforced server-side only — the page just renders whatever `GET /admin/summary` returns,
+  including its own 403 as a plain "no access" message for non-admins.
 - `src/App.tsx` — route guards (`Gate` requires a completed onboarding; `RequireAccount` just
   requires login, for the onboarding/settings pages themselves).
 
