@@ -1,0 +1,109 @@
+{
+  "is_synthetic": true,
+  "generated_from": "data/generated",
+  "window_results": {
+    "5.0min_xgboost": {
+      "n_windows": 55264,
+      "n_features": 22,
+      "honest_leave_one_plant_out": {
+        "method": "leave_one_plant_out",
+        "n_folds": 32,
+        "accuracy": 0.7214,
+        "macro_f1": 0.7211,
+        "log_loss": 0.7608,
+        "brier_score": 0.3955,
+        "warning": ""
+      },
+      "inflated_random_split_DO_NOT_USE": {
+        "method": "random_split_DO_NOT_USE",
+        "n_folds": 1,
+        "accuracy": 0.8931,
+        "macro_f1": 0.8931,
+        "log_loss": 0.3119,
+        "brier_score": 0.1708,
+        "warning": "THIS NUMBER IS DISHONEST. Windows from the same plant appear on both sides of this split, so the model partly memorized per-plant signatures rather than learning the class. It does not estimate real-world performance on a new plant. Shown only to demonstrate the leakage the brief warns about \u2014 see leave_one_plant_out_cv() for the number that should actually be reported."
+      },
+      "inflation_accuracy_points": 17.16
+    },
+    "30.0min_xgboost": {
+      "n_windows": 9184,
+      "n_features": 22,
+      "honest_leave_one_plant_out": {
+        "method": "leave_one_plant_out",
+        "n_folds": 32,
+        "accuracy": 0.811,
+        "macro_f1": 0.8111,
+        "log_loss": 0.5119,
+        "brier_score": 0.2742,
+        "warning": ""
+      },
+      "inflated_random_split_DO_NOT_USE": {
+        "method": "random_split_DO_NOT_USE",
+        "n_folds": 1,
+        "accuracy": 0.8917,
+        "macro_f1": 0.8917,
+        "log_loss": 0.2922,
+        "brier_score": 0.1591,
+        "warning": "THIS NUMBER IS DISHONEST. Windows from the same plant appear on both sides of this split, so the model partly memorized per-plant signatures rather than learning the class. It does not estimate real-world performance on a new plant. Shown only to demonstrate the leakage the brief warns about \u2014 see leave_one_plant_out_cv() for the number that should actually be reported."
+      },
+      "inflation_accuracy_points": 8.07
+    }
+  },
+  "chosen_window_minutes": 30.0,
+  "minirocket_like_raw_30min": {
+    "n_windows": 9184,
+    "honest_leave_one_plant_out": {
+      "method": "leave_one_plant_out",
+      "n_folds": 32,
+      "accuracy": 0.1754,
+      "macro_f1": 0.1751,
+      "log_loss": 1.4412,
+      "brier_score": 0.7769,
+      "warning": ""
+    },
+    "inflated_random_split_DO_NOT_USE": {
+      "method": "random_split_DO_NOT_USE",
+      "n_folds": 1,
+      "accuracy": 0.2586,
+      "macro_f1": 0.2582,
+      "log_loss": 1.3948,
+      "brier_score": 0.7536,
+      "warning": "THIS NUMBER IS DISHONEST. Windows from the same plant appear on both sides of this split, so the model partly memorized per-plant signatures rather than learning the class. It does not estimate real-world performance on a new plant. Shown only to demonstrate the leakage the brief warns about \u2014 see leave_one_plant_out_cv() for the number that should actually be reported."
+    }
+  },
+  "model_comparison_honest_macro_f1": {
+    "xgboost_30.0min_features": 0.8111,
+    "minirocket_like_30min_raw": 0.1751
+  },
+  "confound_ablation": {
+    "signal_only": {
+      "method": "leave_one_plant_out",
+      "n_folds": 32,
+      "accuracy": 0.6114,
+      "macro_f1": 0.6161,
+      "log_loss": 0.8942,
+      "brier_score": 0.4811,
+      "warning": ""
+    },
+    "signal_plus_environment": {
+      "method": "leave_one_plant_out",
+      "n_folds": 32,
+      "accuracy": 0.811,
+      "macro_f1": 0.8111,
+      "log_loss": 0.5119,
+      "brier_score": 0.2742,
+      "warning": ""
+    },
+    "accuracy_points_from_environment": 19.96
+  },
+  "calibration": {
+    "method": "isotonic",
+    "brier_before": 0.2742,
+    "brier_after": 0.2612
+  },
+  "final_model": {
+    "window_minutes": 30.0,
+    "n_features": 22,
+    "trained_on_n_windows": 9184
+  }
+}

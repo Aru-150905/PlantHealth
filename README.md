@@ -17,7 +17,12 @@ history shows what worked at each stage. Status below.
 
 - [x] **1. Synthetic data generator + sanity-check notebook** — `backend/data/synthetic.py`,
       `notebooks/01_synthetic_data_sanity_check.ipynb`
-- [ ] 2. Feature extraction + XGBoost + leave-one-plant-out CV
+- [x] **2. Feature extraction + XGBoost + leave-one-plant-out CV** — `backend/ml/`. Honest
+      leave-one-plant-out accuracy 81.1% (30-min windows) vs. an inflated random-split number
+      of 89.2% — see `backend/ml/README.md` for the full report, the MiniRocket-like
+      comparison, calibration, and a genuine confound finding the SHAP analysis caught
+      (environment features alone add +20 honest accuracy points — see
+      "Confound finding" in that README).
 - [ ] 3. FastAPI backend: auth, tenants, tier enforcement
 - [ ] 4. Role fork + both onboarding flows
 - [ ] 5. Farmer view
@@ -53,6 +58,11 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+**macOS troubleshooting:** XGBoost needs the OpenMP runtime (`libomp.dylib`), which isn't
+bundled in the PyPI wheel. Normally `brew install libomp` fixes this. If Homebrew can't
+fetch a bottle for your macOS version (older macOS, no bottle built), see
+`~/Desktop/PlantHealth-Decisions/04-xgboost-libomp-workaround.md` for a bottle-free fix.
+
 ### Generate the demo dataset
 
 ```bash
@@ -65,5 +75,17 @@ python data/synthetic.py --plants-per-class 8 --duration-days 3 --fs-hz 10 --see
 jupyter nbconvert --to notebook --execute --inplace notebooks/01_synthetic_data_sanity_check.ipynb
 # or open it normally in Jupyter/VS Code to explore interactively
 ```
+
+### Train the ML pipeline
+
+```bash
+cd backend && source .venv/bin/activate
+python ml/train.py --data-dir data/generated
+```
+
+Prints the full honest report (leave-one-plant-out vs. inflated random-split, the
+MiniRocket-like comparison, the confound ablation, calibration) and writes
+`ml/models/` (deployable artifacts, gitignored) + `ml/reports/` (metrics + plots, tracked).
+See `backend/ml/README.md`.
 
 (Frontend setup, full one-command run, and seed script land with steps 3–4.)
