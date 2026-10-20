@@ -38,8 +38,9 @@ one dual-role, one platform admin), all with password `demo-password-123`.
   below which a cell becomes "unknown" rather than a false guess. See
   `~/Desktop/PlantHealth-Decisions/09-farmer-view-and-sentinel.md`.
 - `routers/` — `auth` (register/login/me), `tenants` (tier-limits readout, role/onboarding
-  setting), `devices`/`plants` (tier-enforced CRUD), `predict` (the gated prediction
-  endpoint), `field` (the sentinel field map + 24h/7d trend), `ws` (live streaming).
+  setting, the confound panel), `devices`/`plants` (tier-enforced CRUD), `predict` (the
+  gated prediction endpoint), `field` (the sentinel field map + 24h/7d trend), `lab` (signal/
+  features/SHAP/CSV export — section 7), `ws` (live streaming).
 - `seed.py` — per section 11: demo tenants on every tier with plausible devices/plants.
 
 ## Tier enforcement, concretely

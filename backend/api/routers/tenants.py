@@ -1,14 +1,16 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+import numpy as np
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from ..db import get_db
 from ..deps import get_current_tenant
-from ..models import Role, Tenant
+from ..ml_runtime import ModelNotTrainedError, runtime
+from ..models import Plant, Role, Tenant
 from ..schemas import (
-    FarmerOnboardingRequest, LabOnboardingRequest, LanguageUpdateRequest,
-    OnboardingOut, RoleUpdateRequest, TenantOut,
+    ConfoundClassStat, ConfoundPanelOut, FarmerOnboardingRequest, LabOnboardingRequest,
+    LanguageUpdateRequest, OnboardingOut, RoleUpdateRequest, TenantOut,
 )
 from ..tiers import limits_for
 
@@ -108,3 +110,67 @@ def set_language(body: LanguageUpdateRequest, tenant: Tenant = Depends(get_curre
     db.commit()
     db.refresh(tenant)
     return tenant
+
+
+# confound suspicion threshold: flag when the spread between the highest- and lowest-
+# variability class means exceeds this fraction of their average. Illustrative, not fit to
+# any real incubator's measured compressor behaviour — same honesty footnote as
+# backend/data/synthetic.py's own confound parameters.
+_CONFOUND_SUSPICION_RATIO = 0.30
+
+
+@router.get("/me/confound-panel", response_model=ConfoundPanelOut)
+def get_confound_panel(tenant: Tenant = Depends(get_current_tenant), db: Session = Depends(get_db)):
+    """Section 7's confound panel: chamber temperature against predicted class, flagging
+    suspicious correlation. This is the live version of the finding from step 2's SHAP
+    analysis (env_air_temp_std_c dominating the heat class) — see
+    ~/Desktop/PlantHealth-Decisions/06-confound-finding.md — computed fresh per tenant
+    rather than hardcoded to that one finding, so it'll flag whichever class (if any)
+    actually looks suspicious for THIS tenant's plants.
+    """
+    profile = tenant.onboarding_profile or {}
+    lab_profile = profile.get("lab")
+    chamber_type = lab_profile.get("chamber_type") if lab_profile else None
+    enabled = chamber_type == "incubator"
+
+    plants = db.query(Plant).filter(Plant.tenant_id == tenant.id).all()
+    by_class: dict[str, list[float]] = {}
+    try:
+        for plant in plants:
+            window = runtime.demo_window_for_plant(plant.id)
+            class_label, _, _ = runtime.predict_window(
+                window["potential_mv"], window["air_temp_c"], window["humidity_pct"], window["leaf_temp_c"],
+            )
+            temp_std = float(np.std(window["air_temp_c"]))
+            by_class.setdefault(class_label, []).append(temp_std)
+    except ModelNotTrainedError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+
+    stats = [
+        ConfoundClassStat(class_label=k, n_plants=len(v), env_air_temp_std_c_mean=round(sum(v) / len(v), 4))
+        for k, v in sorted(by_class.items())
+    ]
+
+    flagged, reason = False, None
+    if len(stats) >= 2:
+        hi = max(stats, key=lambda s: s.env_air_temp_std_c_mean)
+        lo = min(stats, key=lambda s: s.env_air_temp_std_c_mean)
+        avg = (hi.env_air_temp_std_c_mean + lo.env_air_temp_std_c_mean) / 2
+        spread = (hi.env_air_temp_std_c_mean - lo.env_air_temp_std_c_mean) / avg if avg > 1e-9 else 0
+        if spread > _CONFOUND_SUSPICION_RATIO:
+            flagged = True
+            reason = (
+                f"'{hi.class_label}' plants show {spread * 100:.0f}% more chamber-temperature "
+                f"variability than '{lo.class_label}' plants. If that arm's setpoint runs "
+                f"furthest from room temperature, the compressor may be cycling harder — the "
+                f"model could be reading the chamber, not the plant. See backend/data/README.md."
+            )
+    elif not plants:
+        reason = "No plants yet — add plants across more than one treatment arm to check this."
+    elif len(stats) < 2:
+        reason = "Only one predicted class present so far — need plants in more than one class to compare."
+
+    return ConfoundPanelOut(
+        is_synthetic=True, chamber_type=chamber_type, confound_panel_enabled=enabled,
+        n_plants_analyzed=len(plants), by_class=stats, flagged=flagged, flag_reason=reason,
+    )

@@ -190,6 +190,52 @@ export interface TrendOut {
   points: TrendPoint[]
 }
 
+export interface SignalOut {
+  plant_id: string
+  is_synthetic: boolean
+  fs_hz: number
+  downsample_stride: number
+  timestamp_s: number[]
+  potential_mv: number[]
+  air_temp_c: number[]
+  humidity_pct: number[]
+  leaf_temp_c: number[]
+}
+
+export interface FeaturesOut {
+  plant_id: string
+  is_synthetic: boolean
+  features: Record<string, number>
+}
+
+export interface ShapFeature {
+  feature: string
+  shap_value: number
+  feature_value: number
+}
+
+export interface ExplainOut {
+  plant_id: string
+  class_label: string
+  top_features: ShapFeature[]
+}
+
+export interface ConfoundClassStat {
+  class_label: string
+  n_plants: number
+  env_air_temp_std_c_mean: number
+}
+
+export interface ConfoundPanelOut {
+  is_synthetic: boolean
+  chamber_type: string | null
+  confound_panel_enabled: boolean
+  n_plants_analyzed: number
+  by_class: ConfoundClassStat[]
+  flagged: boolean
+  flag_reason: string | null
+}
+
 export interface TierLimits {
   max_sentinel_devices: number | null
   max_plants_covered: number | null
@@ -231,6 +277,14 @@ export const api = {
   field: (plantId: string, blockSize?: number) =>
     get<FieldOut>(`/plants/${plantId}/field${blockSize ? `?block_size=${blockSize}` : ""}`),
   trend: (plantId: string, days: 1 | 7) => get<TrendOut>(`/plants/${plantId}/trend?days=${days}`),
+
+  signal: (plantId: string, durationMinutes: number, offsetMinutes: number) =>
+    get<SignalOut>(`/plants/${plantId}/signal?duration_minutes=${durationMinutes}&offset_minutes=${offsetMinutes}`),
+  features: (plantId: string) => get<FeaturesOut>(`/plants/${plantId}/features`),
+  explain: (plantId: string) => get<ExplainOut>(`/plants/${plantId}/explain`),
+  exportCsvUrl: (plantId: string, durationMinutes: number) =>
+    `/api/plants/${plantId}/export.csv?duration_minutes=${durationMinutes}`,
+  confoundPanel: () => get<ConfoundPanelOut>("/tenants/me/confound-panel"),
 
   del,
 }

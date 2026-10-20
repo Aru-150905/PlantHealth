@@ -1,27 +1,43 @@
 import { useEffect, useRef, useState } from "react"
 import { Link } from "react-router-dom"
-import { ApiError, api, type OnboardingOut, type PlantOut } from "../api/client"
+import {
+  ApiError, api, type ConfoundPanelOut, type ExplainOut, type FeaturesOut,
+  type OnboardingOut, type PlantOut, type PredictionResult,
+} from "../api/client"
+import ConfoundPanelComponent from "../components/ConfoundPanel"
+import FeatureTable from "../components/FeatureTable"
+import ShapPanel from "../components/ShapPanel"
+import WaveformViewer from "../components/WaveformViewer"
 import { useAuth } from "../state/auth"
 
-interface PredictResult {
-  stressed: boolean
-  class_label: string | null
-  confidence_pct: number | null
-  full_probability_vector?: Record<string, number>
-  shap_available: boolean
+function Card({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
+  return (
+    <div className="bg-white rounded-xl shadow-sm p-5 space-y-3">
+      <div>
+        <p className="font-medium text-gray-800">{title}</p>
+        {subtitle && <p className="text-xs text-gray-400">{subtitle}</p>}
+      </div>
+      {children}
+    </div>
+  )
 }
 
 /**
  * Lab wording per section 5's vocabulary table: exact, numeric, jargon-forward
  * ("Predicted class: drought (p = 0.74, calibrated)") — never the farmer's plain-language
- * copy. Full waveform viewer + confound panel land in step 6; this proves the fork already
- * drives different behavior from what onboarding actually captured.
+ * copy. The full section-7 feature set: waveform viewer (time + frequency domain, pan/
+ * zoom), the feature table, SHAP (Pro), environmental overlay, raw CSV export, and the
+ * confound panel.
  */
 export default function LabHome() {
   const { tenant } = useAuth()
   const [onboarding, setOnboarding] = useState<OnboardingOut | null>(null)
   const [plant, setPlant] = useState<PlantOut | null>(null)
-  const [result, setResult] = useState<PredictResult | null>(null)
+  const [result, setResult] = useState<PredictionResult | null>(null)
+  const [features, setFeatures] = useState<FeaturesOut["features"] | null>(null)
+  const [explain, setExplain] = useState<ExplainOut | null>(null)
+  const [explainError, setExplainError] = useState<string | null>(null)
+  const [confound, setConfound] = useState<ConfoundPanelOut | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
   // see FarmerHome.tsx for why this guard exists — StrictMode double-invoke + real POSTs
@@ -44,7 +60,19 @@ export default function LabHome() {
         setPlant(first)
         if (first) {
           const pred = await api.predict(first.id)
-          setResult(pred.result as unknown as PredictResult)
+          setResult(pred.result)
+          const f = await api.features(first.id)
+          setFeatures(f.features)
+          try {
+            setExplain(await api.explain(first.id))
+          } catch (err) {
+            setExplainError(err instanceof ApiError ? (err.detail as { message?: string })?.message ?? String(err.detail) : null)
+          }
+        }
+        try {
+          setConfound(await api.confoundPanel())
+        } catch {
+          // non-critical panel — don't fail the whole page load over it
         }
       } catch (err) {
         setLoadError(err instanceof ApiError ? String(err.detail) : "Something went wrong loading this replicate.")
@@ -56,6 +84,7 @@ export default function LabHome() {
   }, [])
 
   const lab = onboarding?.lab
+  const canExport = result?.raw_export && result.raw_export !== "none"
 
   return (
     <div className="min-h-dvh bg-gray-50">
@@ -90,12 +119,28 @@ export default function LabHome() {
 
         {!loading && result && (
           <div className="bg-white rounded-xl shadow-sm p-6 space-y-3">
-            <p className="text-sm text-gray-400">{plant?.label ?? "Replicate 1"} · model v. current</p>
-            <h2 className="text-xl font-mono">
-              Predicted class: <span className="font-semibold">{result.class_label ?? "n/a"}</span>
-              {result.confidence_pct != null && <> (p = {(result.confidence_pct / 100).toFixed(2)}, calibrated)</>}
-            </h2>
-            <p className="text-sm text-gray-500">stressed = {String(result.stressed)}</p>
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm text-gray-400">{plant?.label ?? "Replicate 1"} · model v. current</p>
+                <h2 className="text-xl font-mono">
+                  {result.unknown ? (
+                    <>Predicted class: <span className="font-semibold">unknown</span> — {result.unknown_reason}</>
+                  ) : (
+                    <>Predicted class: <span className="font-semibold">{result.class_label ?? "n/a"}</span>
+                    {result.confidence_pct != null && <> (p = {(result.confidence_pct / 100).toFixed(2)}, calibrated)</>}</>
+                  )}
+                </h2>
+                <p className="text-sm text-gray-500">stressed = {result.stressed === null ? "n/a" : String(result.stressed)}</p>
+              </div>
+              {canExport && plant && (
+                <a
+                  href={api.exportCsvUrl(plant.id, 30)} download
+                  className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 shrink-0"
+                >
+                  ⤓ Export CSV
+                </a>
+              )}
+            </div>
 
             {result.full_probability_vector && (
               <div className="pt-2">
@@ -107,17 +152,41 @@ export default function LabHome() {
                 </div>
               </div>
             )}
-
-            <p className="text-xs text-gray-400">
-              SHAP explanations: {result.shap_available ? "available (Pro)" : "not available on this tier"}
-            </p>
           </div>
+        )}
+
+        {!loading && plant && (
+          <Card title="Signal" subtitle="Time domain, frequency domain, pan and zoom — environmental channels on the same time axis below">
+            <WaveformViewer plantId={plant.id} />
+          </Card>
+        )}
+
+        {!loading && features && (
+          <Card title="Computed features" subtitle="This window's feature vector, as fed to the model">
+            <FeatureTable features={features} />
+          </Card>
+        )}
+
+        {!loading && (explain || explainError) && (
+          <Card title="SHAP explanation" subtitle="Which features drove this prediction">
+            {explain ? (
+              <ShapPanel classLabel={explain.class_label} features={explain.top_features} />
+            ) : (
+              <p className="text-sm text-gray-400">{explainError} Upgrade to Pro to see this.</p>
+            )}
+          </Card>
+        )}
+
+        {!loading && confound && (
+          <Card title="Confound panel" subtitle="Chamber temperature against predicted class">
+            <ConfoundPanelComponent panel={confound} />
+          </Card>
         )}
 
         {lab?.has_ground_truth_assay && (
           <p className="text-xs text-gray-400">
-            Ground-truth assay data flagged as available — CSV upload + supervised
-            recalibration wiring lands with the lab view (step 6).
+            Ground-truth assay data flagged as available — upload wiring for supervised
+            recalibration against it is not yet built.
           </p>
         )}
 

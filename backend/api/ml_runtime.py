@@ -19,6 +19,7 @@ BACKEND_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(BACKEND_DIR / "ml"))
 sys.path.insert(0, str(BACKEND_DIR / "data"))
 
+from explain import top_features_for_prediction  # noqa: E402
 from features import _signal_features  # noqa: E402
 from synthetic import CLASS_LABELS, HardwareConfig, PlantRecordingConfig, generate_plant_recording  # noqa: E402
 
@@ -69,6 +70,21 @@ class MLRuntime:
         ).hexdigest()[:12]
         self._loaded = True
 
+    def features_dict_for_window(
+        self, potential_mv: list[float], air_temp_c: list[float], humidity_pct: list[float], leaf_temp_c: list[float],
+    ) -> dict[str, float]:
+        """The raw feature dict (unordered, human-readable keys) for the lab view's feature
+        table and the confound panel — as opposed to _window_to_feature_row's ordered numpy
+        array, which is what the model actually consumes. Same underlying computation
+        (backend/ml/features.py), different shape for a different consumer."""
+        self._ensure_loaded()
+        row = _signal_features(np.asarray(potential_mv))
+        row["env_air_temp_mean_c"] = float(np.mean(air_temp_c))
+        row["env_air_temp_std_c"] = float(np.std(air_temp_c))
+        row["env_humidity_mean_pct"] = float(np.mean(humidity_pct))
+        row["env_leaf_temp_mean_c"] = float(np.mean(leaf_temp_c))
+        return row
+
     def _window_to_feature_row(
         self, potential_mv: np.ndarray, air_temp_c: np.ndarray, humidity_pct: np.ndarray, leaf_temp_c: np.ndarray,
     ) -> pd.DataFrame:
@@ -93,6 +109,26 @@ class MLRuntime:
         class_label = self.label_encoder.classes_[class_idx]
         proba = {label: float(p) for label, p in zip(self.label_encoder.classes_, calibrated)}
         return class_label, class_label != "healthy", proba
+
+    def explain_window(
+        self, potential_mv: list[float], air_temp_c: list[float], humidity_pct: list[float], leaf_temp_c: list[float], k: int = 5,
+    ) -> list[dict]:
+        """SHAP top-k features for this window's prediction — section 3's explainability
+        requirement, surfaced in the lab view's SHAP panel (Pro tier only, section 9) and
+        used by explain_prediction_plain() for the farmer's one-line 'why'. The explainer
+        is built once per process (TreeExplainer parses the whole tree ensemble) and reused,
+        not rebuilt per call."""
+        self._ensure_loaded()
+        if not hasattr(self, "_shap_explainer"):
+            import shap
+            self._shap_explainer = shap.TreeExplainer(self.model)
+        X = self._window_to_feature_row(
+            np.asarray(potential_mv), np.asarray(air_temp_c), np.asarray(humidity_pct), np.asarray(leaf_temp_c),
+        )
+        raw_proba = self.model.predict_proba(X.to_numpy())
+        class_idx = int(np.argmax(self.calibrator.transform(raw_proba)[0]))
+        shap_values = self._shap_explainer(X)
+        return top_features_for_prediction(shap_values, row_idx=0, class_idx=class_idx, k=k)
 
     @staticmethod
     def demo_class_for_plant(plant_id: str) -> str:
@@ -148,6 +184,36 @@ class MLRuntime:
         window = self.window_from_recording(df, end_offset_days=0.0, fs_hz=fs_hz)
         window["true_class_label"] = self.demo_class_for_plant(plant_id)  # demo-only, not tier-returned
         return window
+
+    def raw_signal_for_plant(
+        self, plant_id: str, duration_minutes: float, offset_minutes: float, fs_hz: float = 10.0, max_points: int = 4000,
+    ) -> dict:
+        """Raw samples for the lab view's waveform viewer (section 7) — 'pan' is
+        `offset_minutes` (how far back the window's end sits from 'now'), 'zoom' is
+        `duration_minutes` (how much time the window spans). Downsamples by simple striding
+        above `max_points` so a multi-hour request doesn't ship hundreds of thousands of
+        points to the browser — a visualization simplification (loses sub-stride detail,
+        same honesty caveat as backend/data/README.md's fs/decimation notes), not applied
+        when the window is already short enough to show at full resolution.
+        """
+        df = self.demo_recording_for_plant(plant_id, fs_hz)
+        window_n = max(1, int(duration_minutes * 60 * fs_hz))
+        end_n = len(df) - int(offset_minutes * 60 * fs_hz)
+        end_n = max(window_n, min(len(df), end_n))
+        start_n = max(0, end_n - window_n)
+        sliced = df.iloc[start_n:end_n]
+
+        stride = max(1, len(sliced) // max_points)
+        sliced = sliced.iloc[::stride]
+        return {
+            "fs_hz": fs_hz / stride,
+            "downsample_stride": stride,
+            "timestamp_s": sliced["timestamp_s"].tolist(),
+            "potential_mv": sliced["potential_mv"].tolist(),
+            "air_temp_c": sliced["air_temp_c"].tolist(),
+            "humidity_pct": sliced["humidity_pct"].tolist(),
+            "leaf_temp_c": sliced["leaf_temp_c"].tolist(),
+        }
 
 
 runtime = MLRuntime(settings.ml_models_dir)

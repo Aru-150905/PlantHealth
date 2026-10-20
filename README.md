@@ -47,7 +47,13 @@ history shows what worked at each stage. Status below.
       consistency bug (predict/trend/field independently regenerating synthetic data at
       different durations, silently disagreeing on "now") — see
       `~/Desktop/PlantHealth-Decisions/09-farmer-view-and-sentinel.md`. 34 backend tests.
-- [ ] 6. Lab view + confound panel
+- [x] **6. Lab view + confound panel** — the full section-7 experience: a waveform viewer
+      (time domain, frequency domain via a client-side FFT, pan/zoom, environmental
+      channels on a second chart — never a dual y-axis), the computed feature table, a SHAP
+      explanation panel (Pro), raw CSV export (Premium/Pro), and the confound panel —
+      which recomputes step 2's confound finding live, per tenant, from real predictions
+      over the real API, and correctly flagged it again on a 12-plant test tenant. See
+      `~/Desktop/PlantHealth-Decisions/10-lab-view-and-confound-panel.md`. 41 backend tests.
 - [ ] 7. Admin dashboard
 - [ ] 8. Tier gating end to end + demo-data banner
 

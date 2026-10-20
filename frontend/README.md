@@ -35,6 +35,11 @@ Requires the backend running at `http://127.0.0.1:8000` (see `backend/api/README
   icon + legend, never color alone. `TrendChart.tsx` (Premium/Pro) and `TrendSummary.tsx`
   (Basic — plain-language, since a coarse confidence band can't honestly support a precise
   chart) cover section 6's 24h/7d trend.
+- `src/components/WaveformViewer.tsx` — section 7's signal viewer: time domain (with an
+  `src/lib/fft.ts` radix-2 FFT for the frequency view), pan/zoom, environmental channels as
+  a second chart sharing the time axis (never a dual y-axis). `FeatureTable.tsx` (the raw
+  feature vector), `ShapPanel.tsx` (Pro — diverging blue/red bars), `ConfoundPanel.tsx`
+  (chamber temperature by predicted class, flagging a real detected spread).
 - `src/App.tsx` — route guards (`Gate` requires a completed onboarding; `RequireAccount` just
   requires login, for the onboarding/settings pages themselves).
 

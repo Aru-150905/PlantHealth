@@ -193,3 +193,57 @@ class TrendOut(BaseModel):
     window_days: float
     is_synthetic: bool
     points: list[TrendPointOut]
+
+
+class SignalOut(BaseModel):
+    """The lab view's waveform viewer (section 7) — raw signal + environmental channels,
+    overlaid so confounds are visible, with pan (offset_minutes) and zoom (duration_minutes)."""
+    plant_id: str
+    is_synthetic: bool
+    fs_hz: float
+    downsample_stride: int
+    timestamp_s: list[float]
+    potential_mv: list[float]
+    air_temp_c: list[float]
+    humidity_pct: list[float]
+    leaf_temp_c: list[float]
+
+
+class FeaturesOut(BaseModel):
+    """The computed feature values for the current window, in a table (section 7)."""
+    plant_id: str
+    is_synthetic: bool
+    features: dict[str, float]
+
+
+class ShapFeatureOut(BaseModel):
+    feature: str
+    shap_value: float
+    feature_value: float
+
+
+class ExplainOut(BaseModel):
+    """SHAP explanation for the current prediction (section 3/7, Pro tier only)."""
+    plant_id: str
+    class_label: str
+    top_features: list[ShapFeatureOut]
+
+
+class ConfoundClassStat(BaseModel):
+    class_label: str
+    n_plants: int
+    env_air_temp_std_c_mean: float
+
+
+class ConfoundPanelOut(BaseModel):
+    """Section 7's confound panel: chamber temperature against predicted class, flagging
+    suspicious correlation — the compressor confound found for real in step 2's SHAP
+    analysis (env_air_temp_std_c dominating the heat class). See
+    ~/Desktop/PlantHealth-Decisions/06-confound-finding.md."""
+    is_synthetic: bool
+    chamber_type: str | None
+    confound_panel_enabled: bool
+    n_plants_analyzed: int
+    by_class: list[ConfoundClassStat]
+    flagged: bool
+    flag_reason: str | None
