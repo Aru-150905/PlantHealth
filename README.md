@@ -23,7 +23,11 @@ history shows what worked at each stage. Status below.
       comparison, calibration, and a genuine confound finding the SHAP analysis caught
       (environment features alone add +20 honest accuracy points — see
       "Confound finding" in that README).
-- [ ] 3. FastAPI backend: auth, tenants, tier enforcement
+- [x] **3. FastAPI backend: auth, tenants, tier enforcement** — `backend/api/`. JWT auth,
+      multi-tenant isolation, every section-9 tier limit enforced server-side (tested over
+      the real HTTP API, not just unit-tested), gated prediction endpoint backed by the
+      step-2 model, a live-streaming WebSocket, and a seed script with demo tenants on every
+      tier. See `backend/api/README.md`.
 - [ ] 4. Role fork + both onboarding flows
 - [ ] 5. Farmer view
 - [ ] 6. Lab view + confound panel
@@ -88,4 +92,16 @@ MiniRocket-like comparison, the confound ablation, calibration) and writes
 `ml/models/` (deployable artifacts, gitignored) + `ml/reports/` (metrics + plots, tracked).
 See `backend/ml/README.md`.
 
-(Frontend setup, full one-command run, and seed script land with steps 3–4.)
+### Run the API
+
+```bash
+cd backend && source .venv/bin/activate
+python -m api.seed          # demo tenants on every tier — prints logins, safe to re-run
+uvicorn api.main:app --reload
+```
+
+Docs at `http://127.0.0.1:8000/docs`. Run the backend test suite with
+`python -m pytest tests/ -v` (includes server-side tier-enforcement tests hitting the real
+API). See `backend/api/README.md`.
+
+(Frontend setup and a single top-level one-command run land with step 5.)
