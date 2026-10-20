@@ -33,9 +33,13 @@ one dual-role, one platform admin), all with password `demo-password-123`.
   supplied, a deterministic-per-plant synthetic demo window) into a calibrated prediction.
   `model_version` is a hash of the model file, so the admin model registry (step 7) can tell
   which tenants are on which version without a separate version-bump ritual.
-- `routers/` — `auth` (register/login/me), `tenants` (tier-limits readout, role setting),
-  `devices`/`plants` (tier-enforced CRUD), `predict` (the gated prediction endpoint), `ws`
-  (live streaming).
+- `sentinel.py` — the confidence-decay model behind the farmer field map (section 4):
+  concentric rings around the sentinel, confidence strictly decreasing per ring, a floor
+  below which a cell becomes "unknown" rather than a false guess. See
+  `~/Desktop/PlantHealth-Decisions/09-farmer-view-and-sentinel.md`.
+- `routers/` — `auth` (register/login/me), `tenants` (tier-limits readout, role/onboarding
+  setting), `devices`/`plants` (tier-enforced CRUD), `predict` (the gated prediction
+  endpoint), `field` (the sentinel field map + 24h/7d trend), `ws` (live streaming).
 - `seed.py` — per section 11: demo tenants on every tier with plausible devices/plants.
 
 ## Tier enforcement, concretely

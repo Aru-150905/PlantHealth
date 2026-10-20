@@ -38,7 +38,15 @@ history shows what worked at each stage. Status below.
       handling, a React StrictMode double-invoke issue, "both"-role onboarding routing, a
       login request-encoding bug, and an account-switch race condition) — see
       `frontend/README.md` and the decision log.
-- [ ] 5. Farmer view
+- [x] **5. Farmer view** — the full section-6 experience: big immediate verdict with a
+      plain-language certainty word, the sentinel field map (`backend/api/sentinel.py` +
+      `frontend/src/components/FieldMap.tsx`) with confidence that visibly decays by
+      distance and a live block-size slider, a 24h/7d trend (a real chart for Premium/Pro,
+      an honest plain-language summary for Basic — never a precise-looking chart from a
+      coarse band), tier-gated remedy copy. Building this surfaced and fixed a real
+      consistency bug (predict/trend/field independently regenerating synthetic data at
+      different durations, silently disagreeing on "now") — see
+      `~/Desktop/PlantHealth-Decisions/09-farmer-view-and-sentinel.md`. 34 backend tests.
 - [ ] 6. Lab view + confound panel
 - [ ] 7. Admin dashboard
 - [ ] 8. Tier gating end to end + demo-data banner

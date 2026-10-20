@@ -148,6 +148,48 @@ export interface DeviceOut {
   artefact_flagged: boolean
 }
 
+export interface PredictionResult {
+  stressed: boolean | null
+  class_label: string | null
+  confidence_band: string | null
+  confidence_pct: number | null
+  full_probability_vector?: Record<string, number>
+  unknown: boolean
+  unknown_reason?: string
+  diagnosis_remedy_available: boolean
+  severity_timeline_available: boolean
+  shap_available: boolean
+  raw_export: string
+}
+
+export interface FieldCell {
+  ring: number
+  is_measured: boolean
+  is_unknown: boolean
+  cell_count: number
+  result: PredictionResult
+}
+
+export interface FieldOut {
+  plant_id: string
+  block_size: number
+  is_synthetic: boolean
+  cells: FieldCell[]
+}
+
+export interface TrendPoint {
+  timestamp: string
+  days_ago: number
+  result: PredictionResult
+}
+
+export interface TrendOut {
+  plant_id: string
+  window_days: number
+  is_synthetic: boolean
+  points: TrendPoint[]
+}
+
 export interface TierLimits {
   max_sentinel_devices: number | null
   max_plants_covered: number | null
@@ -185,7 +227,10 @@ export const api = {
     post<PlantOut>("/plants", body),
   listDevices: () => get<DeviceOut[]>("/devices"),
   createDevice: (serial: string) => post<DeviceOut>("/devices", { serial }),
-  predict: (plantId: string) => post<{ result: Record<string, unknown> }>(`/plants/${plantId}/predict`, {}),
+  predict: (plantId: string) => post<{ result: PredictionResult; plant_id: string; is_synthetic: boolean }>(`/plants/${plantId}/predict`, {}),
+  field: (plantId: string, blockSize?: number) =>
+    get<FieldOut>(`/plants/${plantId}/field${blockSize ? `?block_size=${blockSize}` : ""}`),
+  trend: (plantId: string, days: 1 | 7) => get<TrendOut>(`/plants/${plantId}/trend?days=${days}`),
 
   del,
 }

@@ -60,6 +60,10 @@ const hi: Record<TranslationKey, string> = {
   "farmer.home.what_to_do": "मुझे क्या करना चाहिए?",
   "farmer.home.upgrade_for_remedy": "उपचार सलाह देखने के लिए अपग्रेड करें",
   "farmer.home.demo_banner": "डेमो डेटा — यह किसी वास्तविक पौधे से नहीं है",
+  "farmer.home.field_map": "आपका खेत",
+  "farmer.home.trend": "रुझान",
+  "farmer.home.trend.day": "पिछले 24 घंटे",
+  "farmer.home.trend.week": "पिछले 7 दिन",
 
   "settings.title": "सेटिंग्स",
   "settings.role": "मैं हूँ",

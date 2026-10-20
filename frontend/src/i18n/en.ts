@@ -52,6 +52,10 @@ const en = {
   "farmer.home.what_to_do": "What should I do?",
   "farmer.home.upgrade_for_remedy": "Upgrade to see remedy guidance",
   "farmer.home.demo_banner": "DEMO DATA — not from a real plant",
+  "farmer.home.field_map": "Your field",
+  "farmer.home.trend": "Trend",
+  "farmer.home.trend.day": "Last 24 hours",
+  "farmer.home.trend.week": "Last 7 days",
 
   "settings.title": "Settings",
   "settings.role": "I am",

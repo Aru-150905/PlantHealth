@@ -1,16 +1,14 @@
 import { useEffect, useRef, useState } from "react"
 import { Link } from "react-router-dom"
-import { ApiError, api, type OnboardingOut, type PlantOut } from "../api/client"
+import {
+  ApiError, api, type FieldOut, type OnboardingOut, type PlantOut,
+  type PredictionResult, type TrendOut,
+} from "../api/client"
+import FieldMap from "../components/FieldMap"
+import TrendChart from "../components/TrendChart"
+import TrendSummary from "../components/TrendSummary"
 import { useT } from "../i18n"
 import { useAuth } from "../state/auth"
-
-interface PredictResult {
-  stressed: boolean
-  class_label: string | null
-  confidence_band: string | null
-  confidence_pct: number | null
-  diagnosis_remedy_available: boolean
-}
 
 const WATERING_REMEDY: Record<string, string> = {
   drip: "Check the drip line for clogs near this block before assuming the plant itself is stressed.",
@@ -20,23 +18,26 @@ const WATERING_REMEDY: Record<string, string> = {
 }
 
 /**
- * A genuinely farmer-shaped landing, built from what onboarding actually captured — not a
- * stripped-down lab view. Full field map lands in step 5; this proves the fork already
- * changes behavior per the brief's "if picking farmer changes nothing, the fork is fake."
+ * The full farmer view (section 6): big immediate verdict, the sentinel field map with
+ * live confidence decay (section 4), a 24h/7d trend, actionable remedy copy gated by tier,
+ * no jargon, no raw waveforms, built to work one-handed on a phone (narrow column, large
+ * touch targets throughout).
  */
 export default function FarmerHome() {
   const { t } = useT()
   const { tenant } = useAuth()
   const [onboarding, setOnboarding] = useState<OnboardingOut | null>(null)
   const [plant, setPlant] = useState<PlantOut | null>(null)
-  const [result, setResult] = useState<PredictResult | null>(null)
+  const [result, setResult] = useState<PredictionResult | null>(null)
+  const [field, setField] = useState<FieldOut | null>(null)
+  const [trend, setTrend] = useState<TrendOut | null>(null)
+  const [trendDays, setTrendDays] = useState<1 | 7>(1)
   const [loading, setLoading] = useState(true)
+  const [trendLoading, setTrendLoading] = useState(false)
   const [capNotice, setCapNotice] = useState<string | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
-  // Guards against React StrictMode's dev-mode double-invoke of effects: this effect does
-  // real POSTs (create a demo plant, run a prediction), which must happen at most once per
-  // mount — re-running it would silently drop state set during the first (discarded) pass
-  // and risks duplicate writes, not just a cosmetic double-render.
+  // real POSTs happen in here (demo plant creation) — must run once per mount regardless of
+  // React StrictMode's dev-mode double-invoke; see ~/Desktop/PlantHealth-Decisions
   const didInit = useRef(false)
 
   useEffect(() => {
@@ -50,11 +51,6 @@ export default function FarmerHome() {
         const plants = await api.listPlants()
         let first = plants[0] ?? null
         if (!first) {
-          // first visit — create a demo plant (a sentinel-centered block) so there's
-          // something to show, sized from the farmer's own onboarding answers. Those
-          // answers were collected before any tier was chosen or checked, so this can
-          // legitimately exceed the account's tier limit (section 9) — handled below,
-          // not assumed away.
           const devices = await api.listDevices()
           const requestedCoverage = ob.farmer?.sensor_count
             ? Math.round((ob.farmer.plant_count ?? 100) / ob.farmer.sensor_count)
@@ -65,8 +61,6 @@ export default function FarmerHome() {
             })
           } catch (err) {
             if (err instanceof ApiError && (err.detail as { error?: string })?.error === "plants covered_limit_reached") {
-              // section 9: "explain what they'd get rather than just blocking them" —
-              // same principle applies here, not only at the device/plant CRUD layer.
               const { limits } = await api.myTierLimits()
               const cap = limits.max_plants_covered ?? requestedCoverage
               first = await api.createPlant({ label: "Block 1", device_id: devices[0]?.id ?? null, covered_count: cap })
@@ -83,7 +77,11 @@ export default function FarmerHome() {
         setPlant(first)
         if (first) {
           const pred = await api.predict(first.id)
-          setResult(pred.result as unknown as PredictResult)
+          setResult(pred.result)
+          const f = await api.field(first.id)
+          setField(f)
+          const tr = await api.trend(first.id, 1)
+          setTrend(tr)
         }
       } catch (err) {
         setLoadError(err instanceof ApiError ? String(err.detail) : "Something went wrong loading your field.")
@@ -94,17 +92,38 @@ export default function FarmerHome() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  async function changeBlockSize(size: number) {
+    if (!plant) return
+    const f = await api.field(plant.id, size)
+    setField(f)
+  }
+
+  async function changeTrendDays(days: 1 | 7) {
+    if (!plant) return
+    setTrendDays(days)
+    setTrendLoading(true)
+    try {
+      setTrend(await api.trend(plant.id, days))
+    } finally {
+      setTrendLoading(false)
+    }
+  }
+
   const farmer = onboarding?.farmer
-  const verdict = result?.stressed ? t("farmer.home.verdict.stressed") : t("farmer.home.verdict.healthy")
-  const confidenceWord = result?.confidence_band
-    ? t(
-        result.confidence_band === "fairly sure"
-          ? "farmer.home.confidence.fairly_sure"
-          : result.confidence_band === "uncertain"
-            ? "farmer.home.confidence.uncertain"
-            : "farmer.home.confidence.not_sure",
-      )
-    : null
+  const verdict = result?.unknown
+    ? t("farmer.home.confidence.not_sure")
+    : result?.stressed ? t("farmer.home.verdict.stressed") : t("farmer.home.verdict.healthy")
+  const confidenceWord = result?.unknown
+    ? null
+    : result?.confidence_band
+      ? t(
+          result.confidence_band === "fairly sure"
+            ? "farmer.home.confidence.fairly_sure"
+            : result.confidence_band === "uncertain"
+              ? "farmer.home.confidence.uncertain"
+              : "farmer.home.confidence.not_sure",
+        )
+      : null
 
   return (
     <div className="min-h-dvh bg-leaf-50">
@@ -144,15 +163,17 @@ export default function FarmerHome() {
         {!loading && result && (
           <div className="bg-white rounded-2xl shadow-sm p-6 text-center space-y-3">
             <p className="text-sm text-gray-400">{plant?.label ?? "Block 1"} · {plant?.covered_count} plants</p>
-            <h2 className={`text-2xl font-bold ${result.stressed ? "text-stress-600" : "text-leaf-700"}`}>
-              {result.class_label ? `${result.class_label[0].toUpperCase()}${result.class_label.slice(1)} stress suspected` : verdict}
+            <h2 className={`text-2xl font-bold ${result.unknown ? "text-gray-500" : result.stressed ? "text-stress-600" : "text-leaf-700"}`}>
+              {result.unknown ? "Not sure yet" : result.class_label ? `${result.class_label[0].toUpperCase()}${result.class_label.slice(1)} stress suspected` : verdict}
             </h2>
             {confidenceWord && <p className="text-gray-500">{confidenceWord}</p>}
             {result.confidence_pct != null && <p className="text-gray-400 text-sm">{result.confidence_pct}%</p>}
 
             <div className="pt-4 border-t border-gray-100 text-left">
               <p className="font-medium text-gray-700 mb-1">{t("farmer.home.what_to_do")}</p>
-              {result.diagnosis_remedy_available && farmer ? (
+              {result.unknown ? (
+                <p className="text-sm text-gray-400">{result.unknown_reason === "window variance below threshold" ? "Check back in a few hours — the signal isn't clear enough yet." : "Not enough signal to say yet."}</p>
+              ) : result.diagnosis_remedy_available && farmer ? (
                 <p className="text-sm text-gray-600">{WATERING_REMEDY[farmer.watering_method]}</p>
               ) : (
                 <p className="text-sm text-gray-400">{t("farmer.home.upgrade_for_remedy")}</p>
@@ -161,6 +182,45 @@ export default function FarmerHome() {
                 General guidance only, not a diagnosis. Alerting preference: {farmer?.alert_threshold === "tell_me_early" ? "tell me early" : "only when fairly sure"}.
               </p>
             </div>
+          </div>
+        )}
+
+        {!loading && field && (
+          <div className="bg-white rounded-2xl shadow-sm p-5">
+            <p className="font-medium text-gray-700 mb-3 text-center">{t("farmer.home.field_map")}</p>
+            <FieldMap
+              cells={field.cells} blockSize={field.block_size} onBlockSizeChange={changeBlockSize}
+              maxBlockSize={Math.max(2000, (farmer?.plant_count ?? 500) * 2)}
+            />
+          </div>
+        )}
+
+        {!loading && trend && (
+          <div className="bg-white rounded-2xl shadow-sm p-5">
+            <div className="flex items-center justify-between mb-2">
+              <p className="font-medium text-gray-700">{t("farmer.home.trend")}</p>
+              <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs">
+                <button
+                  onClick={() => changeTrendDays(1)}
+                  className={`px-2.5 py-1 ${trendDays === 1 ? "bg-leaf-600 text-white" : "text-gray-500"}`}
+                >
+                  {t("farmer.home.trend.day")}
+                </button>
+                <button
+                  onClick={() => changeTrendDays(7)}
+                  className={`px-2.5 py-1 ${trendDays === 7 ? "bg-leaf-600 text-white" : "text-gray-500"}`}
+                >
+                  {t("farmer.home.trend.week")}
+                </button>
+              </div>
+            </div>
+            {trendLoading ? (
+              <p className="text-center text-gray-400 text-sm py-8">Loading…</p>
+            ) : tenant?.tier === "basic" ? (
+              <TrendSummary points={trend.points} />
+            ) : (
+              <TrendChart points={trend.points} days={trendDays} />
+            )}
           </div>
         )}
 

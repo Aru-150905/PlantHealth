@@ -10,6 +10,23 @@
   --color-stress-600: #a84f20;
 }
 
+/* Chart/status tokens — dataviz skill's reference palette (light surface only; the app
+   has no dark-mode theming yet, see frontend/README.md known gaps). Status colors are
+   reserved for state (good/stressed/unknown), never reused as a generic series color. */
+:root {
+  --chart-surface: #fcfcfb;
+  --chart-text-primary: #0b0b0b;
+  --chart-text-secondary: #52514e;
+  --chart-text-muted: #898781;
+  --chart-gridline: #e1e0d9;
+  --chart-baseline: #c3c2b7;
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-serious: #ec835a;
+  --status-critical: #d03b3b;
+  --status-unknown: #898781;
+}
+
 html, body, #root {
   height: 100%;
 }

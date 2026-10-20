@@ -18,6 +18,12 @@ from .models import Tier
 
 UNLIMITED = math.inf
 
+# Section 8: "when the model is uncertain, say so instead of picking a class anyway." Below
+# this confidence, every tier gets the "unknown / insufficient signal" state (shape_unknown
+# below) instead of a number — illustrative threshold, not fit to any labelled real-world
+# calibration data (none exists for this project — see backend/data/README.md).
+UNKNOWN_CONFIDENCE_FLOOR = 0.40
+
 
 @dataclass(frozen=True)
 class TierLimits:
@@ -107,6 +113,49 @@ def check_plants_covered_limit(tier: Tier, current_covered: int, adding: int) ->
         raise _limit_error("plants covered", tier, limit, current_covered)
 
 
+def rescale_proba(proba: dict[str, float], new_top_confidence: float) -> dict[str, float]:
+    """Rescale a probability vector so its top class's probability becomes
+    `new_top_confidence`, redistributing the remainder across the other classes
+    proportionally to their original ratios. Used by the sentinel field map (section 4) to
+    show a neighbour cell's DECAYED confidence while keeping the same predicted class the
+    sentinel actually measured — an inferred cell is still "probably drought, just less
+    sure," not a different, independently-drawn prediction.
+    """
+    top_class = max(proba, key=proba.get)
+    others = {k: v for k, v in proba.items() if k != top_class}
+    others_sum = sum(others.values())
+    remainder = max(0.0, 1.0 - new_top_confidence)
+    if others_sum > 1e-9:
+        scaled_others = {k: v / others_sum * remainder for k, v in others.items()}
+    else:
+        share = remainder / len(others) if others else 0.0
+        scaled_others = {k: share for k in others}
+    return {top_class: new_top_confidence, **scaled_others}
+
+
+def shape_unknown(tier: Tier, reason: str) -> dict:
+    """The honesty state section 8 requires: 'when the model is uncertain, say so instead
+    of picking a class anyway... build an unknown / insufficient signal state and use it.'
+    Used both for a genuinely low-confidence reading and for a sentinel field-map cell
+    whose distance-decayed confidence fell below the floor (backend/api/sentinel.py) —
+    same principle, two sources. No tier gets a fake precise number here, Pro included:
+    an unknowable extrapolation doesn't become knowable by paying more.
+    """
+    limits = limits_for(tier)
+    return {
+        "stressed": None,
+        "class_label": None,
+        "confidence_band": "not sure yet" if limits.confidence_detail == "coarse_band" else None,
+        "confidence_pct": None,
+        "unknown": True,
+        "unknown_reason": reason,
+        "diagnosis_remedy_available": False,
+        "severity_timeline_available": False,
+        "shap_available": False,
+        "raw_export": limits.raw_export,
+    }
+
+
 def shape_prediction(tier: Tier, class_label: str, stressed: bool, proba: dict[str, float]) -> dict:
     """The tier-shaped view of a prediction — section 9's table, applied. This is what
     every prediction-returning endpoint sends back; nothing downstream re-implements this
@@ -115,7 +164,7 @@ def shape_prediction(tier: Tier, class_label: str, stressed: bool, proba: dict[s
     limits = limits_for(tier)
     confidence = max(proba.values())
 
-    out: dict = {"stressed": stressed}
+    out: dict = {"stressed": stressed, "unknown": False}
 
     if limits.which_of_4_states:
         out["class_label"] = class_label
@@ -137,3 +186,14 @@ def shape_prediction(tier: Tier, class_label: str, stressed: bool, proba: dict[s
     out["shap_available"] = limits.shap_explanations
     out["raw_export"] = limits.raw_export
     return out
+
+
+def shape_prediction_or_unknown(tier: Tier, class_label: str, stressed: bool, proba: dict[str, float]) -> dict:
+    """What every /predict-style endpoint should actually call: applies the section-8
+    honesty floor before tier-shaping, so a genuinely low-confidence reading becomes
+    'unknown' instead of a falsely confident class — on every tier, not just the ones that
+    show a coarse band."""
+    confidence = max(proba.values())
+    if confidence < UNKNOWN_CONFIDENCE_FLOOR:
+        return shape_unknown(tier, reason="window variance below threshold")
+    return shape_prediction(tier, class_label, stressed, proba)

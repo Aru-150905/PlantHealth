@@ -164,3 +164,32 @@ class PredictionOut(BaseModel):
     is_synthetic: bool
     model_version: str
     result: dict  # tier-shaped — see backend/api/tiers.py::shape_prediction
+
+
+class FieldCellOut(BaseModel):
+    """One cell of the farmer field map (section 4/6). ring=0 is the sentinel itself."""
+    ring: int
+    is_measured: bool
+    is_unknown: bool  # confidence decayed below the honesty floor — section 8
+    cell_count: int  # how many real plants this one visual cell represents
+    result: dict  # tier-shaped, same shape as PredictionOut.result
+
+
+class FieldOut(BaseModel):
+    plant_id: str
+    block_size: int
+    is_synthetic: bool
+    cells: list[FieldCellOut]
+
+
+class TrendPointOut(BaseModel):
+    timestamp: datetime
+    days_ago: float
+    result: dict  # tier-shaped
+
+
+class TrendOut(BaseModel):
+    plant_id: str
+    window_days: float
+    is_synthetic: bool
+    points: list[TrendPointOut]

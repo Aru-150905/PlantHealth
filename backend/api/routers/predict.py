@@ -8,7 +8,7 @@ from ..deps import get_current_tenant
 from ..ml_runtime import ModelNotTrainedError, runtime
 from ..models import Plant, Prediction, Tenant
 from ..schemas import PredictionOut, PredictRequest
-from ..tiers import shape_prediction
+from ..tiers import shape_prediction_or_unknown
 
 router = APIRouter(prefix="/plants", tags=["predict"])
 
@@ -49,7 +49,7 @@ def predict(
     db.add(record)
     db.commit()
 
-    shaped = shape_prediction(tenant.tier, class_label, stressed, proba)
+    shaped = shape_prediction_or_unknown(tenant.tier, class_label, stressed, proba)
     return PredictionOut(
         plant_id=plant.id, is_measured=True, distance_rank=0,
         is_synthetic=is_synthetic, model_version=runtime.model_version, result=shaped,

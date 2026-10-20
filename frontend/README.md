@@ -27,9 +27,14 @@ Requires the backend running at `http://127.0.0.1:8000` (see `backend/api/README
   only — the lab flow is deliberately not translated (see `hi.ts`'s header).
 - `src/pages/` — `Login`, `Register`, `RoleChoice` (the first-run two-button screen),
   `onboarding/FarmerOnboarding` (9-step wizard), `onboarding/LabOnboarding` (single dense
-  form), `FarmerHome`/`LabHome` (placeholder landings — full field map / signal viewer land
-  in steps 5–6, but these already render real, tier-gated, onboarding-answer-driven content,
-  not stubs), `Settings` (role + language switch).
+  form), `FarmerHome` (the full section-6 farmer view — verdict, sentinel field map, trend,
+  remedy, all tier-gated and onboarding-driven), `LabHome` (placeholder landing — the full
+  signal viewer + confound panel land in step 6), `Settings` (role + language switch).
+- `src/components/FieldMap.tsx` — the sentinel field map (section 4): rings fading with
+  distance, a live block-size slider, status-colored cells (good/critical/unknown) with an
+  icon + legend, never color alone. `TrendChart.tsx` (Premium/Pro) and `TrendSummary.tsx`
+  (Basic — plain-language, since a coarse confidence band can't honestly support a precise
+  chart) cover section 6's 24h/7d trend.
 - `src/App.tsx` — route guards (`Gate` requires a completed onboarding; `RequireAccount` just
   requires login, for the onboarding/settings pages themselves).
 
