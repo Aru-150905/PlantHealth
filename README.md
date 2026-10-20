@@ -28,7 +28,16 @@ history shows what worked at each stage. Status below.
       the real HTTP API, not just unit-tested), gated prediction endpoint backed by the
       step-2 model, a live-streaming WebSocket, and a seed script with demo tenants on every
       tier. See `backend/api/README.md`.
-- [ ] 4. Role fork + both onboarding flows
+- [x] **4. Role fork + both onboarding flows** — `frontend/` + `backend/api/routers/tenants.py`.
+      The first-run two-button screen, the 9-step farmer wizard, the single dense lab form,
+      a Hindi/English i18n layer for the farmer-facing UI, and settings-page role/language
+      switching (including "both" role support). Answers are persisted server-side and
+      actually drive different behavior (coverage ratio, watering-based remedy copy,
+      confound-panel-enabled flag, vocabulary) — verified end to end in a real browser
+      across every seeded tier. That testing caught and fixed 5 real bugs (tier-limit
+      handling, a React StrictMode double-invoke issue, "both"-role onboarding routing, a
+      login request-encoding bug, and an account-switch race condition) — see
+      `frontend/README.md` and the decision log.
 - [ ] 5. Farmer view
 - [ ] 6. Lab view + confound panel
 - [ ] 7. Admin dashboard
@@ -104,4 +113,16 @@ Docs at `http://127.0.0.1:8000/docs`. Run the backend test suite with
 `python -m pytest tests/ -v` (includes server-side tier-enforcement tests hitting the real
 API). See `backend/api/README.md`.
 
-(Frontend setup and a single top-level one-command run land with step 5.)
+### Run the frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Opens at `http://localhost:5173` (needs the API running — see above). Demo logins:
+`basic@demo.planthealth` / `premium@demo.planthealth` / `pro@demo.planthealth` /
+`both@demo.planthealth`, password `demo-password-123` for all. See `frontend/README.md`.
+
+(A single top-level one-command run for both services lands with step 5.)

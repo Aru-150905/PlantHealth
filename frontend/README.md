@@ -1,0 +1,53 @@
+# Frontend
+
+React + Vite + TypeScript + Tailwind v4. Talks to `backend/api/` via `/api` (proxied by Vite
+in dev — see `vite.config.ts`).
+
+## Run it
+
+```bash
+npm install
+npm run dev
+```
+
+Requires the backend running at `http://127.0.0.1:8000` (see `backend/api/README.md`) —
+`python -m api.seed` first for demo logins.
+
+## Structure
+
+- `src/api/client.ts` — typed fetch wrapper + every backend endpoint the UI calls.
+- `src/state/auth.tsx` — auth/tenant/onboarding context. Loads `tenant` and `onboarding`
+  **together**, never independently — see
+  `~/Desktop/PlantHealth-Decisions/08-frontend-and-bugs-found-by-testing.md` for the bug
+  that happens if you don't.
+- `src/state/onboardingRouting.ts` — the one place that decides which onboarding wizard (if
+  any) an account still needs, given its role. Used by both the route guard and the
+  settings-page role switch so they can't disagree.
+- `src/i18n/` — `en.ts`/`hi.ts` dictionaries + `useT()`. Farmer-facing and shared strings
+  only — the lab flow is deliberately not translated (see `hi.ts`'s header).
+- `src/pages/` — `Login`, `Register`, `RoleChoice` (the first-run two-button screen),
+  `onboarding/FarmerOnboarding` (9-step wizard), `onboarding/LabOnboarding` (single dense
+  form), `FarmerHome`/`LabHome` (placeholder landings — full field map / signal viewer land
+  in steps 5–6, but these already render real, tier-gated, onboarding-answer-driven content,
+  not stubs), `Settings` (role + language switch).
+- `src/App.tsx` — route guards (`Gate` requires a completed onboarding; `RequireAccount` just
+  requires login, for the onboarding/settings pages themselves).
+
+## Section 5's "is the fork real" test
+
+`FarmerHome` and `LabHome` are different components with different vocabulary, different
+layout, and different data driving them (coverage ratio + watering-based remedy copy vs.
+experimental design + confound panel status) — not one component with fields hidden by role.
+Verified by hand in a real browser across every seeded tier, not just by code review; see the
+decision log entry above for what that testing caught.
+
+## Known gaps (land in later steps)
+
+- Field map / neighbour-inference visualization (step 5), signal viewer + confound panel
+  chart (step 6), admin dashboard (step 7) — `FarmerHome`/`LabHome` are real but intentionally
+  minimal placeholders for those.
+- CSV upload for lab ground-truth assay data is captured as a flag in onboarding but not
+  wired to actually upload/process a file yet.
+- No frontend test suite yet (Vitest/RTL) — correctness here was verified through the actual
+  running app (build + manual browser testing) rather than automated frontend tests; worth
+  adding if the UI surface keeps growing.

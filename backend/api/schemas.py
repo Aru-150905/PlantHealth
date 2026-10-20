@@ -13,6 +13,8 @@ class TenantOut(BaseModel):
     tier: Tier
     role: Role
     suspended: bool
+    onboarding_completed: bool
+    language: str
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -41,6 +43,72 @@ class UserOut(BaseModel):
 
 class RoleUpdateRequest(BaseModel):
     role: Role
+
+
+class LanguageUpdateRequest(BaseModel):
+    language: str = Field(min_length=2, max_length=10)
+
+
+# --------------------------------------------------------------------------------------
+# Section 5 onboarding. Every field is Optional with the brief's own stated default for
+# the farmer flow ("skippable with sensible defaults") — nothing is silently required.
+# The lab flow's fields are mostly required (brief: "a single dense form... this user would
+# rather see everything at once"), but still Optional here so a partial-save pattern is
+# possible later without a schema change; required-ness for lab is enforced as a UX
+# affordance in the frontend form, not at this layer.
+# --------------------------------------------------------------------------------------
+
+
+class FieldLayout(BaseModel):
+    kind: str = "rows"  # "rows" | "grid" | "rough"
+    rows: int | None = None
+    spacing_m: float | None = None
+    grid_width: int | None = None
+    grid_height: int | None = None
+
+
+class FarmerOnboardingRequest(BaseModel):
+    crop: str = "tomato"
+    plant_count: int | None = None
+    plant_count_band: str | None = None  # e.g. "100-500" when given as a slider band, not a number
+    sensor_count: int = Field(default=1, ge=1)
+    field_layout: FieldLayout = Field(default_factory=FieldLayout)
+    watering_method: str = "drip"  # drip | flood | sprinkler | rain_fed
+    salinity_history: str = "unsure"  # "yes" | "no" | "unsure"
+    region: str | None = None
+    season: str | None = None
+    alert_threshold: str = "fairly_sure"  # "fairly_sure" | "tell_me_early"
+    language: str = "en"
+
+
+class LabOnboardingRequest(BaseModel):
+    species: str = "tomato"  # tomato | arabidopsis | rice | maize | other
+    species_other: str | None = None
+    n_plants: int | None = None
+    n_treatment_arms: int | None = None
+    stresses: list[str] = Field(default_factory=lambda: ["drought", "heat", "salinity"])
+    replicates_per_arm: int | None = None
+    chamber_type: str = "incubator"  # incubator | growth_room | greenhouse | open_bench
+    light_hours_on: float = 16.0
+    light_hours_off: float = 8.0
+    light_switch_time: str | None = None  # e.g. "06:00"
+    sampling_rate_hz: float = 10.0
+    electrode_config: str | None = None
+    n_channels: int | None = None
+    amplifier_gain: float | None = None
+    has_ground_truth_assay: bool = False
+    show_random_split_comparison: bool = False  # LOPO is always used regardless — section 3
+    export_retention_preference: str | None = None
+
+
+class OnboardingOut(BaseModel):
+    role: Role
+    onboarding_completed: bool
+    farmer: dict | None = None
+    lab: dict | None = None
+    # server-computed, never trusted from the client — section 4's coverage ratio
+    coverage_ratio_text: str | None = None
+    confound_panel_enabled: bool | None = None
 
 
 class DeviceCreate(BaseModel):

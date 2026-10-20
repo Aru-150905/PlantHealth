@@ -57,6 +57,17 @@ class Tenant(Base):
     # per-device flag lives on Device)
     suspended: Mapped[bool] = mapped_column(Boolean, default=False)
 
+    # section 5 onboarding. One JSON blob rather than two rigid tables: the brief explicitly
+    # asks for an open schema ("leave the schema open for other crops") and a 'both' role
+    # account needs to hold a farmer_profile AND a lab_profile simultaneously — a single
+    # {"farmer": {...}, "lab": {...}} document fits that directly. Shape validated on the
+    # way in by backend/api/schemas.py; see backend/api/README.md for why no migration tool
+    # makes a flexible JSON column the pragmatic choice here over a schema that will keep
+    # changing through steps 5-6.
+    onboarding_profile: Mapped[dict] = mapped_column(JSON, default=dict)
+    onboarding_completed: Mapped[bool] = mapped_column(Boolean, default=False)
+    language: Mapped[str] = mapped_column(String, default="en")  # section 5 Q9 (farmer); settings-changeable
+
     users: Mapped[list["User"]] = relationship(back_populates="tenant", cascade="all, delete-orphan")
     devices: Mapped[list["Device"]] = relationship(back_populates="tenant", cascade="all, delete-orphan")
     plants: Mapped[list["Plant"]] = relationship(back_populates="tenant", cascade="all, delete-orphan")
