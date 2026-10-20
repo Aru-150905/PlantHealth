@@ -1,0 +1,12 @@
+# Built and tested against Python 3.12 (see .python-version). Installed incrementally
+# as each build-order step lands; versions pinned to what was actually tested.
+
+# --- step 1: synthetic data + notebook ---
+numpy==2.5.4
+pandas==3.0.6
+pyarrow==26.0.0
+matplotlib==3.11.2
+jupyter==1.1.1
+nbformat==5.11.1
+nbconvert==7.17.2
+ipykernel==7.4.0

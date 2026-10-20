@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+*.db
+*.sqlite3
+
+# Node
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Data / models (regeneratable — see backend/data/README.md)
+backend/data/generated/*.parquet
+backend/data/generated/*.csv
+backend/ml/models/*.joblib
+backend/ml/models/*.json
+
+# Notebooks
+.ipynb_checkpoints/
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+*.log
+
+# Env
+.env
+.env.local
