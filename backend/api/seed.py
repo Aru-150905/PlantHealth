@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from .db import Base, SessionLocal, engine
 from .ml_runtime import ModelNotTrainedError, runtime
-from .models import Device, Plant, Role, Tenant, Tier, User
+from .models import AlertLog, Device, GroundTruthUpload, Plant, Role, Tenant, Tier, User
 from .security import hash_password
 
 DEMO_PASSWORD = "demo-password-123"
@@ -75,9 +75,22 @@ def seed() -> None:
     db = SessionLocal()
     try:
         demo_emails = [a["email"] for a in DEMO_ACCOUNTS] + [ADMIN_EMAIL]
-        existing = db.query(User).filter(User.email.in_(demo_emails)).all()
-        for u in existing:
-            db.query(Tenant).filter(Tenant.id == u.tenant_id).delete()
+        existing_tenant_ids = [
+            tid for (tid,) in db.query(User.tenant_id).filter(User.email.in_(demo_emails)).all()
+        ]
+        # AlertLog/GroundTruthUpload aren't in Tenant's cascade relationships, so clear them
+        # explicitly; Query.delete() is a bulk op that bypasses ORM cascades entirely, which
+        # is why a plain `Tenant...delete()` here used to leave Users/Devices/Plants behind
+        # as orphans and break the next re-run with a duplicate-email conflict. Users are
+        # deleted directly (not left to cascade) so this stays correct even against a
+        # database already left in that orphaned state by the old version of this script.
+        if existing_tenant_ids:
+            db.query(AlertLog).filter(AlertLog.tenant_id.in_(existing_tenant_ids)).delete(synchronize_session=False)
+            db.query(GroundTruthUpload).filter(GroundTruthUpload.tenant_id.in_(existing_tenant_ids)).delete(synchronize_session=False)
+        db.query(User).filter(User.email.in_(demo_emails)).delete(synchronize_session=False)
+        if existing_tenant_ids:
+            for tenant in db.query(Tenant).filter(Tenant.id.in_(existing_tenant_ids)).all():
+                db.delete(tenant)  # ORM delete so cascade="all, delete-orphan" removes devices/plants too
         db.commit()
 
         for acc in DEMO_ACCOUNTS:
