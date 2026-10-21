@@ -65,6 +65,39 @@ real experiment's scale — a full literature-scale recording (weeks, 50–100 H
 by the same code via `--duration-days` / `--fs-hz`, it just takes longer and produces much
 larger files. `data/generated/` is gitignored; regenerate it rather than committing it.
 
+## Loading real data
+
+`load_real_data.py` converts real recordings into this exact schema — same manifest.csv +
+`raw/<plant_id>.parquet` shape as above — so `backend/ml/train.py` works on it unchanged.
+
+```bash
+python data/load_real_data.py \
+    --out-dir data/real \
+    --labels-csv path/to/labels.csv \
+    --sensor-dir path/to/sensor_csvs      # one CSV per plant (default layout)
+python ml/train.py --data-dir data/real
+```
+
+`--labels-csv` needs only `plant_id,class_label` columns (`class_label` one of
+`healthy`/`drought`/`heat`/`salinity`) — this is the one thing no sensor log carries: which
+treatment arm each plant was actually in. Column names in the sensor CSVs are
+auto-detected from common conventions (`voltage_mv`, `Time (s)`, etc.) and overridable
+(`--potential-col`, `--timestamp-col`, ...) if your export uses something else — run it once
+and read the error message if auto-detection misses a column, it names exactly what it
+tried and what flag to pass instead. `--layout single-file` handles one combined CSV with a
+`plant_id` column instead of per-plant files. Sampling rate is inferred from the
+timestamps unless you pass `--fs-hz`.
+
+Every row this script writes is `is_synthetic=False` — and `train.py` now derives its own
+`is_synthetic` from the manifest rather than assuming synthetic, so a model trained this way
+correctly reports itself as real everywhere downstream (metadata.json, report plots, the
+honest-metrics print at the end). A manifest mixing synthetic and real plants is refused
+outright — see `~/Desktop/PlantHealth-Decisions/13-real-data-loader.md`.
+
+A plant with NaNs in any signal column, or with no matching row in `--labels-csv`, is
+skipped (not fatal) with a clear reason printed at the end — fix the source file and rerun
+rather than silently imputing missing data.
+
 ## Reproducibility
 
 Every plant's RNG is seeded deterministically (`--seed` + plant index), so a given

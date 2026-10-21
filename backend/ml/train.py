@@ -75,7 +75,23 @@ def run(data_dir: Path, out_models: Path, out_reports: Path, fs_hz: float, seed:
     manifest = pd.read_csv(data_dir / "manifest.csv")
     print(f"Loaded manifest: {len(manifest)} plants, classes: {manifest['class_label'].value_counts().to_dict()}")
 
-    report: dict = {"is_synthetic": True, "generated_from": str(data_dir), "window_results": {}}
+    # Derived from the manifest, never assumed — a model trained on real data must never
+    # have "is_synthetic": true baked into its own metadata/report by mistake. A mixed
+    # manifest (some real, some synthetic plants) is refused outright: a single top-level
+    # is_synthetic flag can't honestly describe a model trained on both at once, and this
+    # project's honesty requirements (section 8) don't allow a flag that's sometimes wrong.
+    is_synthetic_values = manifest["is_synthetic"].unique()
+    if len(is_synthetic_values) > 1:
+        raise ValueError(
+            f"manifest.csv mixes is_synthetic values {sorted(is_synthetic_values)} — train on "
+            f"an all-synthetic or all-real manifest, not a mix. Split them into separate "
+            f"--data-dir runs, or decide explicitly how a mixed model should report its "
+            f"provenance before relaxing this check."
+        )
+    is_synthetic = bool(is_synthetic_values[0])
+    print(f"Training on {'SYNTHETIC' if is_synthetic else 'REAL'} data (from manifest.csv is_synthetic column)")
+
+    report: dict = {"is_synthetic": is_synthetic, "generated_from": str(data_dir), "window_results": {}}
 
     # ---------------------------------------------------------------- feature-based models
     feature_tables: dict[float, pd.DataFrame] = {}
@@ -253,7 +269,8 @@ def run(data_dir: Path, out_models: Path, out_reports: Path, fs_hz: float, seed:
         ax.set_xlabel("predicted probability")
     axes[0].set_ylabel("observed frequency")
     axes[0].legend(fontsize=8)
-    fig.suptitle("SYNTHETIC DATA — calibration reliability, leave-one-plant-out out-of-fold")
+    data_label = "SYNTHETIC DATA" if is_synthetic else "REAL DATA"
+    fig.suptitle(f"{data_label} — calibration reliability, leave-one-plant-out out-of-fold")
     plt.tight_layout()
     plt.savefig(out_reports / "calibration_curve.png", dpi=110)
     plt.close(fig)
@@ -271,7 +288,7 @@ def run(data_dir: Path, out_models: Path, out_reports: Path, fs_hz: float, seed:
     fig = plt.figure(figsize=(9, 7))
     try:
         shap.summary_plot(shap_values, X_best.iloc[sample_idx], class_names=list(le.classes_), show=False, max_display=15)
-        plt.title(f"SYNTHETIC DATA — SHAP summary, {best_wmin}min XGBoost ({sample_n} sampled windows)")
+        plt.title(f"{data_label} — SHAP summary, {best_wmin}min XGBoost ({sample_n} sampled windows)")
         plt.tight_layout()
         plt.savefig(out_reports / "shap_summary.png", dpi=110)
     finally:
@@ -281,9 +298,27 @@ def run(data_dir: Path, out_models: Path, out_reports: Path, fs_hz: float, seed:
     joblib.dump(final_model, out_models / "xgboost_model.joblib")
     joblib.dump(cal, out_models / "calibrator.joblib")
     joblib.dump(le, out_models / "label_encoder.joblib")
+    if is_synthetic:
+        honesty_note = (
+            "Trained entirely on synthetic data. honest_* metrics measure whether "
+            "the pipeline works, not real-world performance. See backend/ml/README.md. "
+            "confound_ablation_* quantifies how much of the honest accuracy comes from "
+            "environmental channels (which carry a deliberately-injected incubator "
+            "compressor artefact on the heat class) vs. the electrical signal alone — "
+            "see the 'Confound finding' section of backend/ml/README.md."
+        )
+    else:
+        honesty_note = (
+            f"Trained on REAL data ({int(manifest['plant_id'].nunique())} plants). "
+            "honest_leave_one_plant_out_* is a genuine held-out-plant performance estimate — "
+            "but still from a small sample; treat it accordingly and keep collecting data. "
+            "confound_ablation_* quantifies how much of the honest accuracy comes from "
+            "environmental channels vs. the electrical signal alone — a large swing here is "
+            "worth checking against the lab view's confound panel before trusting the model."
+        )
     with open(out_models / "metadata.json", "w") as f:
         json.dump({
-            "is_synthetic": True,
+            "is_synthetic": is_synthetic,
             "window_minutes": best_wmin,
             "fs_hz": fs_hz,
             "feature_columns": feat_cols,
@@ -293,12 +328,7 @@ def run(data_dir: Path, out_models: Path, out_reports: Path, fs_hz: float, seed:
             "honest_leave_one_plant_out_accuracy": honest_best.accuracy,
             "honest_leave_one_plant_out_macro_f1": honest_best.macro_f1,
             "confound_ablation_accuracy_points_from_environment": round(env_gain_points, 2),
-            "note": "Trained entirely on synthetic data. honest_* metrics measure whether "
-                    "the pipeline works, not real-world performance. See backend/ml/README.md. "
-                    "confound_ablation_* quantifies how much of the honest accuracy comes from "
-                    "environmental channels (which carry a deliberately-injected incubator "
-                    "compressor artefact on the heat class) vs. the electrical signal alone — "
-                    "see the 'Confound finding' section of backend/ml/README.md.",
+            "note": honesty_note,
         }, f, indent=2)
 
     report["final_model"] = {
@@ -312,9 +342,14 @@ def run(data_dir: Path, out_models: Path, out_reports: Path, fs_hz: float, seed:
     _print_header("DONE")
     print(f"Models  -> {out_models}")
     print(f"Reports -> {out_reports}")
-    print("ALL METRICS ABOVE ARE FROM SYNTHETIC DATA — they measure whether the pipeline")
-    print("works, not real-world performance. See backend/ml/README.md section 'What these")
-    print("numbers do and do not mean'.")
+    if is_synthetic:
+        print("ALL METRICS ABOVE ARE FROM SYNTHETIC DATA — they measure whether the pipeline")
+        print("works, not real-world performance. See backend/ml/README.md section 'What these")
+        print("numbers do and do not mean'.")
+    else:
+        print(f"ALL METRICS ABOVE ARE FROM REAL DATA ({int(manifest['plant_id'].nunique())} plants) —")
+        print("the honest leave-one-plant-out score is a genuine performance estimate, from a")
+        print("small sample. Check the confound panel before trusting it on new data.")
 
 
 def main() -> None:

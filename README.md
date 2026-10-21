@@ -79,6 +79,16 @@ history shows what worked at each stage. Status below.
 separately, each with its own decision-log writeup of what was built and why. See
 `~/Desktop/PlantHealth-Decisions/` for the complete build journal.
 
+### Post-build-order: real-data loader
+
+Built ahead of real recordings arriving — `backend/data/load_real_data.py` converts real
+sensor exports (flexible column auto-detection, two input layouts) plus a `plant_id,
+class_label` labels file into the exact schema `backend/ml/train.py` already consumes, so
+training on real data is `python data/load_real_data.py ... && python ml/train.py --data-dir
+...`, no pipeline changes needed. See `backend/data/README.md`'s "Loading real data" section
+and `~/Desktop/PlantHealth-Decisions/13-real-data-loader.md` (including a real
+`is_synthetic`-hardcoded bug in `train.py` that building this surfaced and fixed).
+
 ## Repo layout
 
 ```
