@@ -26,23 +26,23 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-dvh flex items-center justify-center bg-leaf-50 px-4">
-      <form onSubmit={onSubmit} className="w-full max-w-sm bg-white rounded-2xl shadow-sm p-8 space-y-4">
-        <h1 className="text-2xl font-semibold text-leaf-700">PlantHealth</h1>
-        <p className="text-sm text-gray-500">Log in to your account.</p>
+    <div className="min-h-dvh flex items-center justify-center bg-leaf-50 dark:bg-gray-900 px-4">
+      <form onSubmit={onSubmit} className="w-full max-w-sm bg-white dark:bg-gray-800 rounded-2xl surface p-8 space-y-4 animate-fade-in">
+        <h1 className="font-display text-2xl font-semibold text-leaf-700 dark:text-leaf-500">PlantHealth</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400">Log in to your account.</p>
 
         <div className="space-y-1">
-          <label className="text-sm font-medium text-gray-700">Email</label>
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
           <input
             type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-leaf-500"
+            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-leaf-500"
           />
         </div>
         <div className="space-y-1">
-          <label className="text-sm font-medium text-gray-700">Password</label>
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
           <input
             type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-leaf-500"
+            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-leaf-500"
           />
         </div>
 
@@ -50,15 +50,15 @@ export default function Login() {
 
         <button
           type="submit" disabled={busy}
-          className="w-full rounded-lg bg-leaf-600 text-white font-medium py-2.5 hover:bg-leaf-700 disabled:opacity-60"
+          className="w-full rounded-lg bg-leaf-600 text-white font-medium py-2.5 hover:bg-leaf-700 disabled:opacity-60 transition-colors cursor-pointer"
         >
           {busy ? "Logging in…" : "Log in"}
         </button>
 
-        <p className="text-sm text-gray-500 text-center">
-          No account? <Link to="/register" className="text-leaf-600 font-medium">Register</Link>
+        <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
+          No account? <Link to="/register" className="text-leaf-600 dark:text-leaf-500 font-medium">Register</Link>
         </p>
-        <p className="text-xs text-gray-400 text-center">
+        <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
           Demo logins: basic@demo.planthealth / premium@demo.planthealth / pro@demo.planthealth —
           password <code>demo-password-123</code>
         </p>

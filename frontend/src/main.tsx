@@ -4,8 +4,10 @@ import { BrowserRouter } from "react-router-dom"
 import App from "./App.tsx"
 import "./index.css"
 import { api } from "./api/client"
+import { ToastProvider } from "./components/ui/Toast"
 import { I18nProvider } from "./i18n"
 import { AuthProvider, useAuth } from "./state/auth"
+import { ThemeProvider } from "./state/theme"
 
 /** Keeps the i18n locale in sync with the signed-in tenant's saved language (section 5
  * Q9) — defaults to English before login or if unset. */
@@ -26,10 +28,14 @@ function LocalizedApp() {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <BrowserRouter>
-      <AuthProvider>
-        <LocalizedApp />
-      </AuthProvider>
-    </BrowserRouter>
+    <ThemeProvider>
+      <ToastProvider>
+        <BrowserRouter>
+          <AuthProvider>
+            <LocalizedApp />
+          </AuthProvider>
+        </BrowserRouter>
+      </ToastProvider>
+    </ThemeProvider>
   </StrictMode>,
 )

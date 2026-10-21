@@ -60,16 +60,16 @@ export default function WaveformViewer({ plantId }: { plantId: string }) {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs">
+        <div className="flex rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden text-xs">
           <button
             onClick={() => setView("time")}
-            className={`px-2.5 py-1 ${view === "time" ? "bg-gray-800 text-white" : "text-gray-500"}`}
+            className={`px-2.5 py-1 transition-colors cursor-pointer ${view === "time" ? "bg-gray-800 dark:bg-gray-600 text-white" : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"}`}
           >
             Time domain
           </button>
           <button
             onClick={() => setView("frequency")}
-            className={`px-2.5 py-1 ${view === "frequency" ? "bg-gray-800 text-white" : "text-gray-500"}`}
+            className={`px-2.5 py-1 transition-colors cursor-pointer ${view === "frequency" ? "bg-gray-800 dark:bg-gray-600 text-white" : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"}`}
           >
             Frequency domain
           </button>
@@ -79,7 +79,7 @@ export default function WaveformViewer({ plantId }: { plantId: string }) {
             <button
               key={z.minutes}
               onClick={() => setDuration(z.minutes)}
-              className={`px-2 py-1 rounded ${duration === z.minutes ? "bg-gray-800 text-white" : "text-gray-500 border border-gray-200"}`}
+              className={`px-2 py-1 rounded transition-colors cursor-pointer ${duration === z.minutes ? "bg-gray-800 dark:bg-gray-600 text-white" : "text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"}`}
             >
               {z.label}
             </button>
@@ -87,7 +87,7 @@ export default function WaveformViewer({ plantId }: { plantId: string }) {
         </div>
       </div>
 
-      {loading && <p className="text-sm text-gray-400 py-8 text-center">Loading signal…</p>}
+      {loading && <p className="text-sm text-gray-400 dark:text-gray-500 py-8 text-center">Loading signal…</p>}
 
       {!loading && signal && view === "time" && (
         <>
@@ -104,7 +104,7 @@ export default function WaveformViewer({ plantId }: { plantId: string }) {
               <Line type="monotone" dataKey="mv" stroke="#2a78d6" strokeWidth={2} dot={false} isAnimationActive={false} />
             </LineChart>
           </ResponsiveContainer>
-          <p className="text-[11px] text-gray-400 -mt-1">Differential leaf potential, mV</p>
+          <p className="text-[11px] text-gray-400 dark:text-gray-500 -mt-1">Differential leaf potential, mV</p>
 
           <ResponsiveContainer width="100%" height={90}>
             <LineChart data={timeData} margin={{ top: 4, right: 8, bottom: 0, left: -20 }}>
@@ -119,7 +119,7 @@ export default function WaveformViewer({ plantId }: { plantId: string }) {
               <Line type="monotone" dataKey="temp" stroke="#eb6834" strokeWidth={2} dot={false} isAnimationActive={false} />
             </LineChart>
           </ResponsiveContainer>
-          <p className="text-[11px] text-gray-400 -mt-1">Chamber air temperature, °C — same time axis, separate scale (see confound panel)</p>
+          <p className="text-[11px] text-gray-400 dark:text-gray-500 -mt-1">Chamber air temperature, °C — same time axis, separate scale (see confound panel)</p>
         </>
       )}
 
@@ -138,7 +138,7 @@ export default function WaveformViewer({ plantId }: { plantId: string }) {
               <Line type="monotone" dataKey="mag" stroke="#4a3aa7" strokeWidth={2} dot={false} isAnimationActive={false} />
             </LineChart>
           </ResponsiveContainer>
-          <p className="text-[11px] text-gray-400">
+          <p className="text-[11px] text-gray-400 dark:text-gray-500">
             Nyquist = {(signal.fs_hz / 2).toFixed(1)} Hz at this zoom level's effective sample rate
             {signal.fs_hz < 100 && " — zoom out less (shorter duration) to resolve the 50 Hz mains band"}.
           </p>
@@ -146,7 +146,7 @@ export default function WaveformViewer({ plantId }: { plantId: string }) {
       )}
 
       <div className="space-y-1 pt-1">
-        <div className="flex items-center justify-between text-xs text-gray-500">
+        <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
           <span>Pan (minutes before now)</span>
           <span className="font-mono">{offset.toFixed(0)}</span>
         </div>

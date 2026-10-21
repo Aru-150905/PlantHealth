@@ -11,17 +11,17 @@ export default function ShapPanel({ classLabel, features }: { classLabel: string
 
   return (
     <div className="space-y-2">
-      <p className="text-xs text-gray-400">
-        What pushed this window toward <span className="font-mono text-gray-600">{classLabel}</span> (blue) or away from it (red)
+      <p className="text-xs text-gray-400 dark:text-gray-500">
+        What pushed this window toward <span className="font-mono text-gray-600 dark:text-gray-300">{classLabel}</span> (blue) or away from it (red)
       </p>
       {features.map((f) => {
         const pct = (Math.abs(f.shap_value) / maxAbs) * 50
         const positive = f.shap_value >= 0
         return (
           <div key={f.feature} className="flex items-center gap-2 text-xs">
-            <span className="w-32 shrink-0 text-right text-gray-500 font-mono truncate" title={f.feature}>{f.feature}</span>
-            <div className="relative flex-1 h-4 bg-gray-50 rounded">
-              <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gray-300" />
+            <span className="w-32 shrink-0 text-right text-gray-500 dark:text-gray-400 font-mono truncate" title={f.feature}>{f.feature}</span>
+            <div className="relative flex-1 h-4 bg-gray-50 dark:bg-gray-700 rounded">
+              <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gray-300 dark:bg-gray-600" />
               <div
                 className="absolute top-0 bottom-0 rounded"
                 style={{
@@ -31,7 +31,7 @@ export default function ShapPanel({ classLabel, features }: { classLabel: string
                 }}
               />
             </div>
-            <span className="w-14 shrink-0 font-mono tabular-nums text-gray-600">{f.shap_value.toFixed(3)}</span>
+            <span className="w-14 shrink-0 font-mono tabular-nums text-gray-600 dark:text-gray-300">{f.shap_value.toFixed(3)}</span>
           </div>
         )
       })}

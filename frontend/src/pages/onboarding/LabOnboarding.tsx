@@ -26,14 +26,14 @@ const STRESS_OPTIONS = ["drought", "heat", "salinity", "control"]
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <label className="block space-y-1">
-      <span className="text-sm font-medium text-gray-700">{label}</span>
+      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</span>
       {children}
-      {hint && <span className="block text-xs text-gray-400">{hint}</span>}
+      {hint && <span className="block text-xs text-gray-400 dark:text-gray-500">{hint}</span>}
     </label>
   )
 }
 
-const inputCls = "w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-400"
+const inputCls = "w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400"
 
 /**
  * Section 5: "Ask these as a single dense form, not a wizard — this user would rather see
@@ -66,11 +66,11 @@ export default function LabOnboarding() {
   }
 
   return (
-    <div className="min-h-dvh bg-gray-50 px-4 py-10">
-      <form onSubmit={onSubmit} className="max-w-3xl mx-auto bg-white rounded-2xl shadow-sm p-8 space-y-10">
+    <div className="min-h-dvh bg-gray-50 dark:bg-gray-900 px-4 py-10">
+      <form onSubmit={onSubmit} className="max-w-3xl mx-auto bg-white dark:bg-gray-800 rounded-2xl surface p-8 space-y-10 animate-fade-in">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-800">Experiment setup</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="font-display text-2xl font-semibold text-gray-800 dark:text-gray-100">Experiment setup</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             One form, all at once. Every answer below changes how predictions, validation, and
             the confound panel behave for this account — nothing here is cosmetic.
           </p>
@@ -78,7 +78,7 @@ export default function LabOnboarding() {
 
         {/* 1. Species */}
         <fieldset className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <legend className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 col-span-2">
+          <legend className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2 col-span-2">
             1 · Species
           </legend>
           <Field label="Species">
@@ -99,7 +99,7 @@ export default function LabOnboarding() {
 
         {/* 2. Experimental design */}
         <fieldset className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <legend className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 col-span-2">
+          <legend className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2 col-span-2">
             2 · Experimental design
           </legend>
           <Field label="Number of plants">
@@ -112,13 +112,13 @@ export default function LabOnboarding() {
             <input type="number" value={profile.replicates_per_arm ?? ""} onChange={(e) => set("replicates_per_arm", Number(e.target.value))} className={inputCls} />
           </Field>
           <div className="space-y-1">
-            <span className="text-sm font-medium text-gray-700">Which stresses</span>
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Which stresses</span>
             <div className="flex flex-wrap gap-2">
               {STRESS_OPTIONS.map((s) => (
                 <button
                   type="button" key={s} onClick={() => toggleStress(s)}
-                  className={`px-3 py-1.5 rounded-full text-sm border ${
-                    profile.stresses.includes(s) ? "bg-gray-800 text-white border-gray-800" : "border-gray-300 text-gray-600"
+                  className={`px-3 py-1.5 rounded-full text-sm border transition-colors cursor-pointer ${
+                    profile.stresses.includes(s) ? "bg-gray-800 dark:bg-gray-600 text-white border-gray-800 dark:border-gray-600" : "border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300"
                   }`}
                 >
                   {s}
@@ -130,7 +130,7 @@ export default function LabOnboarding() {
 
         {/* 3. Chamber */}
         <fieldset className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <legend className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 col-span-2">
+          <legend className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2 col-span-2">
             3 · Chamber
           </legend>
           <Field label="Chamber type">
@@ -142,7 +142,7 @@ export default function LabOnboarding() {
             </select>
           </Field>
           {profile.chamber_type === "incubator" && (
-            <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-800 self-end">
+            <div className="rounded-lg bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 px-3 py-2 text-sm text-amber-800 dark:text-amber-200 self-end">
               Confound panel enabled by default — the compressor cycles harder the further the
               setpoint sits from room temperature, which can correlate with your treatment label.
               See the lab view's confound panel once this is set up.
@@ -152,7 +152,7 @@ export default function LabOnboarding() {
 
         {/* 4. Light cycle */}
         <fieldset className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <legend className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 col-span-3">
+          <legend className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2 col-span-3">
             4 · Light cycle
           </legend>
           <Field label="Hours on">
@@ -168,7 +168,7 @@ export default function LabOnboarding() {
 
         {/* 5. Acquisition settings */}
         <fieldset className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <legend className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 col-span-2">
+          <legend className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2 col-span-2">
             5 · Acquisition settings
           </legend>
           <Field label="Sampling rate (Hz)" hint="ADS1256, 10–100 Hz typical">
@@ -187,17 +187,17 @@ export default function LabOnboarding() {
 
         {/* 6. Ground truth assay */}
         <fieldset className="space-y-3">
-          <legend className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+          <legend className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">
             6 · Ground-truth assay data
           </legend>
-          <label className="flex items-center gap-2 text-sm text-gray-700">
+          <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
             <input type="checkbox" checked={profile.has_ground_truth_assay} onChange={(e) => set("has_ground_truth_assay", e.target.checked)} />
             I have RWC / proline / MDA / chlorophyll assay data with timepoints
           </label>
           {profile.has_ground_truth_assay && (
             <div className="space-y-1">
               <input type="file" accept=".csv" onChange={(e) => setAssayFile(e.target.files?.[0] ?? null)} className="text-sm" />
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-gray-400 dark:text-gray-500">
                 {assayFile ? `${assayFile.name} selected — ` : ""}
                 CSV upload wiring lands with the lab view (step 6); recorded here so it's not lost.
               </p>
@@ -207,15 +207,15 @@ export default function LabOnboarding() {
 
         {/* 7. Validation preference */}
         <fieldset className="space-y-2">
-          <legend className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+          <legend className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">
             7 · Validation
           </legend>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             Leave-one-plant-out cross-validation is always used for the reported accuracy —
             windows from the same plant are correlated, so a random split would leak the
             answer into the test set. See the model metrics page for why this matters.
           </p>
-          <label className="flex items-center gap-2 text-sm text-gray-700">
+          <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
             <input
               type="checkbox" checked={profile.show_random_split_comparison}
               onChange={(e) => set("show_random_split_comparison", e.target.checked)}
@@ -226,7 +226,7 @@ export default function LabOnboarding() {
 
         {/* 8. Export and retention */}
         <fieldset>
-          <legend className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+          <legend className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">
             8 · Export and retention needs
           </legend>
           <textarea
@@ -239,7 +239,7 @@ export default function LabOnboarding() {
 
         <button
           type="submit" disabled={saving}
-          className="w-full rounded-lg bg-gray-800 hover:bg-gray-900 text-white font-medium py-3 disabled:opacity-60"
+          className="w-full rounded-lg bg-gray-800 hover:bg-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 text-white font-medium py-3 disabled:opacity-60 transition-colors cursor-pointer"
         >
           {saving ? "Saving…" : "Save and continue to the signal viewer"}
         </button>

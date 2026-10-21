@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-leaf-50: #f0faf1;
   --color-leaf-100: #dcf2de;
@@ -8,11 +10,12 @@
   --color-leaf-700: #265d29;
   --color-stress-500: #c7622a;
   --color-stress-600: #a84f20;
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
 }
 
-/* Chart/status tokens — dataviz skill's reference palette (light surface only; the app
-   has no dark-mode theming yet, see frontend/README.md known gaps). Status colors are
-   reserved for state (good/stressed/unknown), never reused as a generic series color. */
+/* Chart/status tokens — dataviz skill's reference palette. Status colors are reserved
+   for state (good/stressed/unknown), never reused as a generic series color. Dark-mode
+   values keep the same hue identity, lifted in lightness/desaturated for a dark surface. */
 :root {
   --chart-surface: #fcfcfb;
   --chart-text-primary: #0b0b0b;
@@ -27,10 +30,121 @@
   --status-unknown: #898781;
 }
 
+.dark {
+  --chart-surface: #1c1e1b;
+  --chart-text-primary: #f3f2ef;
+  --chart-text-secondary: #c8c6bf;
+  --chart-text-muted: #8f8d86;
+  --chart-gridline: #35372f;
+  --chart-baseline: #45473e;
+  --status-good: #37c937;
+  --status-warning: #fab219;
+  --status-serious: #ef9671;
+  --status-critical: #e8605f;
+  --status-unknown: #8f8d86;
+}
+
 html, body, #root {
   height: 100%;
 }
 
 body {
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background-color: #f9fafb;
+}
+
+.dark body {
+  background-color: #111214;
+  color: #e5e7eb;
+  color-scheme: dark;
+}
+
+/* Smooth, cheap transition on the properties theme toggling actually touches —
+   avoids a jarring flash without paying for `transition-all` everywhere. */
+* {
+  transition-property: background-color, border-color, color;
+  transition-duration: 150ms;
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(0.5rem); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-toast-in {
+  animation: toast-in 180ms ease-out;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(0.25rem); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fade-in 220ms ease-out;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+.animate-skeleton {
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+/* Elevation system — a soil-tinted, two-layer shadow (contact shadow + soft cast shadow)
+   plus a hairline top highlight, standing in for every card's old flat `shadow-sm`. Tinted
+   warm-dark rather than generic grey so it reads as "lifted off soil," not stock SaaS chrome. */
+.surface {
+  box-shadow:
+    0 1px 1px rgba(38, 28, 15, 0.04),
+    0 10px 24px -10px rgba(38, 28, 15, 0.16),
+    0 2px 6px -2px rgba(38, 28, 15, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+.dark .surface {
+  box-shadow:
+    0 1px 1px rgba(0, 0, 0, 0.3),
+    0 14px 28px -10px rgba(0, 0, 0, 0.55),
+    0 2px 8px -2px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.045);
+}
+
+/* Ambient radial wash behind the hero screen (RoleChoice) — gives the page itself depth
+   instead of a flat fill, without competing with the two buttons that are the actual focus. */
+.ambient-leaf-bg {
+  background:
+    radial-gradient(60% 50% at 20% 15%, rgba(63, 145, 66, 0.16), transparent 60%),
+    radial-gradient(50% 45% at 85% 80%, rgba(200, 98, 42, 0.08), transparent 60%),
+    var(--color-leaf-50);
+}
+.dark .ambient-leaf-bg {
+  background:
+    radial-gradient(60% 50% at 20% 15%, rgba(63, 145, 66, 0.1), transparent 60%),
+    radial-gradient(50% 45% at 85% 80%, rgba(200, 98, 42, 0.06), transparent 60%),
+    #111214;
+}
+
+/* The app's one orchestrated 3D moment (per the design brief: spend boldness in one
+   place) — the first-run role choice. Real perspective + a pressable depth change on
+   :active, rather than a flat hover color swap. */
+.btn-3d {
+  transform: perspective(600px) translateZ(0);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.25) inset,
+    0 14px 0 -6px rgba(0, 0, 0, 0.18),
+    0 20px 30px -12px rgba(0, 0, 0, 0.35);
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+.btn-3d:hover {
+  transform: perspective(600px) translateZ(4px) translateY(-2px);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.3) inset,
+    0 18px 0 -6px rgba(0, 0, 0, 0.2),
+    0 26px 36px -14px rgba(0, 0, 0, 0.4);
+}
+.btn-3d:active {
+  transform: perspective(600px) translateZ(-2px) translateY(3px);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.2) inset,
+    0 4px 0 -2px rgba(0, 0, 0, 0.18),
+    0 8px 14px -6px rgba(0, 0, 0, 0.3);
 }

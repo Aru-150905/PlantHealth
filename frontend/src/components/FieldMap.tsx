@@ -74,7 +74,7 @@ export default function FieldMap({
         ))}
       </div>
 
-      <div className="flex items-center justify-center gap-4 text-xs text-gray-500">
+      <div className="flex items-center justify-center gap-4 text-xs text-gray-500 dark:text-gray-400">
         {Object.entries(STATUS_STYLE).map(([key, s]) => (
           <span key={key} className="flex items-center gap-1">
             <span
@@ -89,9 +89,9 @@ export default function FieldMap({
       </div>
 
       <div className="space-y-1 pt-1">
-        <div className="flex items-center justify-between text-xs text-gray-500">
+        <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
           <span>Block size</span>
-          <span className="font-medium text-gray-700">{localSize} plants</span>
+          <span className="font-medium text-gray-700 dark:text-gray-300">{localSize} plants</span>
         </div>
         <input
           type="range" min={1} max={maxBlockSize} value={localSize}
@@ -100,7 +100,7 @@ export default function FieldMap({
           onKeyUp={() => onBlockSizeChange(localSize)}
           className="w-full accent-leaf-600"
         />
-        <p className="text-[11px] text-gray-400">
+        <p className="text-[11px] text-gray-400 dark:text-gray-500">
           A bigger block reaches further from the sensor — watch the outer cells fade.
         </p>
       </div>

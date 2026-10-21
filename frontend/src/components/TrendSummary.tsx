@@ -17,7 +17,7 @@ function severity(p: TrendPoint): number | null {
 export default function TrendSummary({ points }: { points: TrendPoint[] }) {
   const known = points.filter((p) => severity(p) !== null)
   if (known.length < 2) {
-    return <p className="text-sm text-gray-400">Not enough history yet to show a trend.</p>
+    return <p className="text-sm text-gray-400 dark:text-gray-500">Not enough history yet to show a trend.</p>
   }
   const oldest = severity(known[0])!
   const newest = severity(known[known.length - 1])!
@@ -38,7 +38,7 @@ export default function TrendSummary({ points }: { points: TrendPoint[] }) {
   return (
     <div className="flex items-center gap-2">
       <span className="text-xl">{emoji}</span>
-      <p className="text-sm text-gray-600">{text}</p>
+      <p className="text-sm text-gray-600 dark:text-gray-400">{text}</p>
     </div>
   )
 }

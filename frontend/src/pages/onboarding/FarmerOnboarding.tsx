@@ -31,10 +31,10 @@ function ChoiceGrid<T extends string>({
           key={opt.value}
           type="button"
           onClick={() => onChange(opt.value)}
-          className={`rounded-xl py-6 px-4 text-lg font-medium border-2 transition ${
+          className={`rounded-xl py-6 px-4 text-lg font-medium border-2 transition-colors cursor-pointer ${
             value === opt.value
-              ? "border-leaf-600 bg-leaf-50 text-leaf-700"
-              : "border-gray-200 text-gray-700 hover:border-gray-300"
+              ? "border-leaf-600 bg-leaf-50 dark:bg-leaf-700/20 text-leaf-700 dark:text-leaf-500"
+              : "border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-500"
           }`}
         >
           {opt.emoji && <span className="block text-2xl mb-1">{opt.emoji}</span>}
@@ -84,7 +84,7 @@ export default function FarmerOnboarding() {
   const steps = [
     // 1. crop
     <div key="crop" className="space-y-6">
-      <h2 className="text-xl font-semibold">{t("farmer.q1.title")}</h2>
+      <h2 className="font-display text-xl font-semibold text-gray-900 dark:text-gray-100">{t("farmer.q1.title")}</h2>
       <ChoiceGrid
         value={profile.crop}
         onChange={(v) => set("crop", v)}
@@ -94,7 +94,7 @@ export default function FarmerOnboarding() {
         ]}
       />
       {profile.crop === "other" && (
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
           Only tomato is fully supported by the model today — the schema is open for other
           crops, but predictions for this crop should be treated as unvalidated.
         </p>
@@ -103,7 +103,7 @@ export default function FarmerOnboarding() {
 
     // 2. plant count
     <div key="count" className="space-y-6">
-      <h2 className="text-xl font-semibold">{t("farmer.q2.title")}</h2>
+      <h2 className="font-display text-xl font-semibold text-gray-900 dark:text-gray-100">{t("farmer.q2.title")}</h2>
       <input
         type="range" min={10} max={5000} step={10}
         value={profile.plant_count ?? 500}
@@ -115,28 +115,28 @@ export default function FarmerOnboarding() {
         type="number" value={profile.plant_count ?? ""}
         onChange={(e) => set("plant_count", e.target.value ? Number(e.target.value) : null)}
         placeholder="or type an exact number"
-        className="w-full rounded-lg border border-gray-300 px-3 py-3 text-center text-lg"
+        className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-3 text-center text-lg text-gray-900 dark:text-gray-100"
       />
     </div>,
 
     // 3. sensor count -> coverage ratio shown immediately
     <div key="sensors" className="space-y-6">
-      <h2 className="text-xl font-semibold">{t("farmer.q3.title")}</h2>
+      <h2 className="font-display text-xl font-semibold text-gray-900 dark:text-gray-100">{t("farmer.q3.title")}</h2>
       <input
         type="number" min={1} value={profile.sensor_count}
         onChange={(e) => set("sensor_count", Math.max(1, Number(e.target.value)))}
-        className="w-full rounded-lg border border-gray-300 px-3 py-3 text-center text-2xl font-semibold"
+        className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-3 text-center text-2xl font-semibold text-gray-900 dark:text-gray-100"
       />
       {coveragePreview && (
-        <div className="rounded-xl bg-leaf-50 border border-leaf-100 py-4 px-4 text-center">
-          <p className="text-leaf-700 font-medium">{t("farmer.q3.coverage", { ratio: coveragePreview })}</p>
+        <div className="rounded-xl bg-leaf-50 dark:bg-leaf-700/20 border border-leaf-100 dark:border-leaf-600/40 py-4 px-4 text-center">
+          <p className="text-leaf-700 dark:text-leaf-500 font-medium">{t("farmer.q3.coverage", { ratio: coveragePreview })}</p>
         </div>
       )}
     </div>,
 
     // 4. field layout
     <div key="layout" className="space-y-6">
-      <h2 className="text-xl font-semibold">{t("farmer.q4.title")}</h2>
+      <h2 className="font-display text-xl font-semibold text-gray-900 dark:text-gray-100">{t("farmer.q4.title")}</h2>
       <ChoiceGrid
         value={profile.field_layout.kind}
         onChange={(v) => set("field_layout", { ...profile.field_layout, kind: v })}
@@ -151,12 +151,12 @@ export default function FarmerOnboarding() {
           <input
             type="number" placeholder="rows" value={profile.field_layout.rows ?? ""}
             onChange={(e) => set("field_layout", { ...profile.field_layout, rows: Number(e.target.value) })}
-            className="rounded-lg border border-gray-300 px-3 py-2"
+            className="rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-2 text-gray-900 dark:text-gray-100"
           />
           <input
             type="number" placeholder="spacing (m)" value={profile.field_layout.spacing_m ?? ""}
             onChange={(e) => set("field_layout", { ...profile.field_layout, spacing_m: Number(e.target.value) })}
-            className="rounded-lg border border-gray-300 px-3 py-2"
+            className="rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-2 text-gray-900 dark:text-gray-100"
           />
         </div>
       )}
@@ -164,7 +164,7 @@ export default function FarmerOnboarding() {
 
     // 5. watering
     <div key="watering" className="space-y-6">
-      <h2 className="text-xl font-semibold">{t("farmer.q5.title")}</h2>
+      <h2 className="font-display text-xl font-semibold text-gray-900 dark:text-gray-100">{t("farmer.q5.title")}</h2>
       <ChoiceGrid
         value={profile.watering_method}
         onChange={(v) => set("watering_method", v)}
@@ -179,7 +179,7 @@ export default function FarmerOnboarding() {
 
     // 6. salinity history
     <div key="salinity" className="space-y-6">
-      <h2 className="text-xl font-semibold">{t("farmer.q6.title")}</h2>
+      <h2 className="font-display text-xl font-semibold text-gray-900 dark:text-gray-100">{t("farmer.q6.title")}</h2>
       <ChoiceGrid
         value={profile.salinity_history}
         onChange={(v) => set("salinity_history", v)}
@@ -193,22 +193,22 @@ export default function FarmerOnboarding() {
 
     // 7. location
     <div key="location" className="space-y-6">
-      <h2 className="text-xl font-semibold">{t("farmer.q7.title")}</h2>
+      <h2 className="font-display text-xl font-semibold text-gray-900 dark:text-gray-100">{t("farmer.q7.title")}</h2>
       <input
         placeholder={t("farmer.q7.region")} value={profile.region ?? ""}
         onChange={(e) => set("region", e.target.value)}
-        className="w-full rounded-lg border border-gray-300 px-3 py-3 text-lg"
+        className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-3 text-lg text-gray-900 dark:text-gray-100"
       />
       <input
         placeholder={t("farmer.q7.season")} value={profile.season ?? ""}
         onChange={(e) => set("season", e.target.value)}
-        className="w-full rounded-lg border border-gray-300 px-3 py-3 text-lg"
+        className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-3 text-lg text-gray-900 dark:text-gray-100"
       />
     </div>,
 
     // 8. alert threshold
     <div key="alerts" className="space-y-6">
-      <h2 className="text-xl font-semibold">{t("farmer.q8.title")}</h2>
+      <h2 className="font-display text-xl font-semibold text-gray-900 dark:text-gray-100">{t("farmer.q8.title")}</h2>
       <ChoiceGrid
         value={profile.alert_threshold}
         onChange={(v) => set("alert_threshold", v)}
@@ -221,7 +221,7 @@ export default function FarmerOnboarding() {
 
     // 9. language
     <div key="language" className="space-y-6">
-      <h2 className="text-xl font-semibold">{t("farmer.q9.title")}</h2>
+      <h2 className="font-display text-xl font-semibold text-gray-900 dark:text-gray-100">{t("farmer.q9.title")}</h2>
       <ChoiceGrid
         value={profile.language}
         onChange={(v) => set("language", v)}
@@ -231,16 +231,16 @@ export default function FarmerOnboarding() {
   ]
 
   return (
-    <div className="min-h-dvh bg-leaf-50 flex flex-col">
-      <div className="h-1.5 bg-leaf-100">
+    <div className="min-h-dvh ambient-leaf-bg flex flex-col">
+      <div className="h-1.5 bg-leaf-100 dark:bg-gray-700">
         <div
           className="h-full bg-leaf-600 transition-all"
           style={{ width: `${((step + 1) / TOTAL_STEPS) * 100}%` }}
         />
       </div>
       <div className="flex-1 flex items-center justify-center px-4 py-8">
-        <div className="w-full max-w-md bg-white rounded-2xl shadow-sm p-8 space-y-8">
-          <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">
+        <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl surface p-8 space-y-8 animate-fade-in">
+          <p className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide">
             {t("onboarding.step", { current: step + 1, total: TOTAL_STEPS })}
           </p>
           {steps[step]}
@@ -249,17 +249,17 @@ export default function FarmerOnboarding() {
               type="button"
               onClick={() => (step === 0 ? undefined : setStep((s) => s - 1))}
               disabled={step === 0}
-              className="text-gray-400 disabled:opacity-0 text-sm font-medium"
+              className="text-gray-400 dark:text-gray-500 disabled:opacity-0 text-sm font-medium cursor-pointer hover:text-gray-600 dark:hover:text-gray-300"
             >
               ← {t("onboarding.back")}
             </button>
             <div className="flex gap-3">
-              <button type="button" onClick={next} className="text-sm text-gray-400 font-medium">
+              <button type="button" onClick={next} className="text-sm text-gray-400 dark:text-gray-500 font-medium cursor-pointer hover:text-gray-600 dark:hover:text-gray-300">
                 {t("onboarding.skip")}
               </button>
               <button
                 type="button" onClick={next} disabled={saving}
-                className="rounded-lg bg-leaf-600 hover:bg-leaf-700 text-white font-medium px-6 py-2.5 disabled:opacity-60"
+                className="rounded-lg bg-leaf-600 hover:bg-leaf-700 text-white font-medium px-6 py-2.5 disabled:opacity-60 transition-colors cursor-pointer"
               >
                 {step === TOTAL_STEPS - 1 ? t("onboarding.finish") : t("onboarding.next")}
               </button>

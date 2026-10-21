@@ -9,9 +9,9 @@ export default function FeatureTable({ features }: { features: FeaturesOut["feat
       <table className="w-full text-sm">
         <tbody>
           {entries.map(([name, value]) => (
-            <tr key={name} className="border-b border-gray-50 last:border-0">
-              <td className="py-1.5 pr-3 text-gray-500 font-mono text-xs">{name}</td>
-              <td className="py-1.5 text-right font-mono text-xs text-gray-800 tabular-nums">
+            <tr key={name} className="border-b border-gray-50 dark:border-gray-700 last:border-0">
+              <td className="py-1.5 pr-3 text-gray-500 dark:text-gray-400 font-mono text-xs">{name}</td>
+              <td className="py-1.5 text-right font-mono text-xs text-gray-800 dark:text-gray-200 tabular-nums">
                 {Number.isFinite(value) ? value.toFixed(4) : String(value)}
               </td>
             </tr>

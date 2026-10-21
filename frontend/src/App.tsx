@@ -20,7 +20,7 @@ import { useAuth } from "./state/auth"
 function Gate({ children }: { children: ReactNode }) {
   const { token, tenant, onboarding, loading } = useAuth()
 
-  if (loading) return <div className="min-h-dvh flex items-center justify-center text-gray-400">Loading…</div>
+  if (loading) return <div className="min-h-dvh flex items-center justify-center bg-leaf-50 dark:bg-gray-900 text-gray-400 dark:text-gray-500">Loading…</div>
   if (!token || !tenant) return <Navigate to="/login" replace />
   if (tenant.role === "unset") return <Navigate to="/role" replace />
 
@@ -61,7 +61,7 @@ export default function App() {
  * settings pages themselves need to be reachable precisely when onboarding isn't done. */
 function RequireAccount({ children }: { children: ReactNode }) {
   const { token, tenant, loading } = useAuth()
-  if (loading) return <div className="min-h-dvh flex items-center justify-center text-gray-400">Loading…</div>
+  if (loading) return <div className="min-h-dvh flex items-center justify-center bg-leaf-50 dark:bg-gray-900 text-gray-400 dark:text-gray-500">Loading…</div>
   if (!token || !tenant) return <Navigate to="/login" replace />
   return <>{children}</>
 }
