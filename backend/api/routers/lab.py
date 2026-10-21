@@ -8,18 +8,19 @@ from __future__ import annotations
 import csv
 import io
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from ..db import get_db
 from ..deps import get_current_tenant
 from ..ml_runtime import ModelNotTrainedError, runtime
-from ..models import Plant, Tenant
-from ..schemas import ExplainOut, FeaturesOut, SignalOut
+from ..models import GroundTruthUpload, Plant, Tenant
+from ..schemas import ExplainOut, FeaturesOut, GroundTruthUploadOut, SignalOut
 from ..tiers import limits_for
 
 router = APIRouter(prefix="/plants", tags=["lab"])
+assay_router = APIRouter(prefix="/tenants/me/ground-truth-assay", tags=["lab"])
 
 
 def _get_plant(plant_id: str, tenant: Tenant, db: Session) -> Plant:
@@ -110,4 +111,79 @@ def export_csv(
         buf, media_type="text/csv",
         headers={"Content-Disposition": f'attachment; filename="{plant.id}_synthetic.csv"'},
     )
+
+
+MAX_ASSAY_BYTES = 5 * 1024 * 1024  # 5 MB — a local-first demo store, not an object store
+
+
+@assay_router.post("", response_model=GroundTruthUploadOut)
+async def upload_ground_truth_assay(
+    file: UploadFile, tenant: Tenant = Depends(get_current_tenant), db: Session = Depends(get_db),
+):
+    """Section 7's ground-truth assay data (RWC / proline / MDA / chlorophyll with
+    timepoints) — flagged as available back in lab onboarding (step 6 in the build order),
+    stored here. Parsed only enough to show the uploader what was received; not yet wired
+    into model recalibration (see backend/api/README.md's ground-truth-upload status)."""
+    if not file.filename or not file.filename.lower().endswith(".csv"):
+        raise HTTPException(status_code=400, detail="Only .csv files are accepted.")
+    raw = await file.read()
+    if len(raw) > MAX_ASSAY_BYTES:
+        raise HTTPException(status_code=413, detail="CSV is too large (max 5 MB for this demo store).")
+    try:
+        text = raw.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        raise HTTPException(status_code=400, detail="Could not read file as UTF-8 text.")
+
+    reader = csv.DictReader(io.StringIO(text))
+    if not reader.fieldnames:
+        raise HTTPException(status_code=400, detail="CSV has no header row.")
+    rows = list(reader)
+    if not rows:
+        raise HTTPException(status_code=400, detail="CSV has a header but no data rows.")
+
+    upload = GroundTruthUpload(
+        tenant_id=tenant.id,
+        filename=file.filename,
+        row_count=len(rows),
+        columns_json=reader.fieldnames,
+        preview_json=rows[:5],
+        raw_csv=text,
+    )
+    db.add(upload)
+    db.commit()
+    db.refresh(upload)
+    return GroundTruthUploadOut(
+        id=upload.id, filename=upload.filename, row_count=upload.row_count,
+        columns=upload.columns_json, preview=upload.preview_json, uploaded_at=upload.uploaded_at,
+    )
+
+
+@assay_router.get("", response_model=list[GroundTruthUploadOut])
+def list_ground_truth_assays(tenant: Tenant = Depends(get_current_tenant), db: Session = Depends(get_db)):
+    uploads = (
+        db.query(GroundTruthUpload)
+        .filter(GroundTruthUpload.tenant_id == tenant.id)
+        .order_by(GroundTruthUpload.uploaded_at.desc())
+        .all()
+    )
+    return [
+        GroundTruthUploadOut(
+            id=u.id, filename=u.filename, row_count=u.row_count,
+            columns=u.columns_json, preview=u.preview_json, uploaded_at=u.uploaded_at,
+        )
+        for u in uploads
+    ]
+
+
+@assay_router.delete("/{upload_id}", status_code=204)
+def delete_ground_truth_assay(upload_id: str, tenant: Tenant = Depends(get_current_tenant), db: Session = Depends(get_db)):
+    upload = (
+        db.query(GroundTruthUpload)
+        .filter(GroundTruthUpload.id == upload_id, GroundTruthUpload.tenant_id == tenant.id)
+        .first()
+    )
+    if not upload:
+        raise HTTPException(status_code=404, detail="Upload not found")
+    db.delete(upload)
+    db.commit()
 

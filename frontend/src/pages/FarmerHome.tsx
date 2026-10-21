@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { Link } from "react-router-dom"
 import {
-  ApiError, api, type FieldOut, type OnboardingOut, type PlantOut,
+  ApiError, api, errorMessage, type FieldOut, type OnboardingOut, type PlantOut,
   type PredictionResult, type TrendOut,
 } from "../api/client"
 import FieldMap from "../components/FieldMap"
@@ -9,7 +9,7 @@ import TrendChart from "../components/TrendChart"
 import TrendSummary from "../components/TrendSummary"
 import { CardSkeleton, Skeleton } from "../components/ui/Skeleton"
 import { useToast } from "../components/ui/Toast"
-import { GearIcon, RefreshIcon, WarningIcon } from "../components/ui/Icon"
+import { DownloadIcon, GearIcon, RefreshIcon, WarningIcon } from "../components/ui/Icon"
 import { useT } from "../i18n"
 import { useAuth } from "../state/auth"
 
@@ -100,7 +100,7 @@ export default function FarmerHome() {
           setLastUpdated(new Date())
         }
       } catch (err) {
-        setLoadError(err instanceof ApiError ? String(err.detail) : "Something went wrong loading your field.")
+        setLoadError(errorMessage(err, "Something went wrong loading your field."))
       } finally {
         setLoading(false)
       }
@@ -141,6 +141,24 @@ export default function FarmerHome() {
     } finally {
       setTrendLoading(false)
     }
+  }
+
+  function downloadTrendCsv() {
+    if (!trend) return
+    const rows = trend.points.map((p) => [
+      p.timestamp, p.days_ago.toFixed(3), p.result.unknown ? "" : String(p.result.stressed),
+      p.result.class_label ?? "", p.result.confidence_band ?? "", p.result.confidence_pct ?? "",
+    ])
+    const csv = [
+      ["timestamp", "days_ago", "stressed", "class_label", "confidence_band", "confidence_pct"],
+      ...rows,
+    ].map((row) => row.join(",")).join("\n")
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }))
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `${plant?.label ?? "block"}_trend_${trendDays}d.csv`
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   const farmer = onboarding?.farmer
@@ -265,20 +283,30 @@ export default function FarmerHome() {
 
         {!loading && trend && (
           <div className="bg-white dark:bg-gray-800 rounded-2xl surface p-5 animate-fade-in">
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-2 gap-2">
               <p className="font-medium text-gray-700 dark:text-gray-300">{t("farmer.home.trend")}</p>
-              <div className="flex rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden text-xs">
+              <div className="flex items-center gap-2">
+                <div className="flex rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden text-xs">
+                  <button
+                    onClick={() => changeTrendDays(1)}
+                    className={`px-2.5 py-1 transition-colors cursor-pointer ${trendDays === 1 ? "bg-leaf-600 text-white" : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"}`}
+                  >
+                    {t("farmer.home.trend.day")}
+                  </button>
+                  <button
+                    onClick={() => changeTrendDays(7)}
+                    className={`px-2.5 py-1 transition-colors cursor-pointer ${trendDays === 7 ? "bg-leaf-600 text-white" : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"}`}
+                  >
+                    {t("farmer.home.trend.week")}
+                  </button>
+                </div>
                 <button
-                  onClick={() => changeTrendDays(1)}
-                  className={`px-2.5 py-1 transition-colors cursor-pointer ${trendDays === 1 ? "bg-leaf-600 text-white" : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"}`}
+                  onClick={downloadTrendCsv}
+                  aria-label="Download trend as CSV"
+                  title="Download trend as CSV"
+                  className="p-1.5 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
                 >
-                  {t("farmer.home.trend.day")}
-                </button>
-                <button
-                  onClick={() => changeTrendDays(7)}
-                  className={`px-2.5 py-1 transition-colors cursor-pointer ${trendDays === 7 ? "bg-leaf-600 text-white" : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"}`}
-                >
-                  {t("farmer.home.trend.week")}
+                  <DownloadIcon className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>

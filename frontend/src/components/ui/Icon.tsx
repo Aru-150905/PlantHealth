@@ -47,6 +47,14 @@ export function LogoutIcon({ className = "w-5 h-5" }: IconProps) {
   )
 }
 
+export function DownloadIcon({ className = "w-5 h-5" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" strokeWidth={1.75} className={`${base} ${className}`}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v12m0 0 4-4m-4 4-4-4M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2" />
+    </svg>
+  )
+}
+
 export function WarningIcon({ className = "w-5 h-5" }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" strokeWidth={1.75} className={`${base} ${className}`}>

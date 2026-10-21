@@ -152,3 +152,40 @@ class Prediction(Base):
     model_version: Mapped[str] = mapped_column(String, nullable=False)
     is_synthetic: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
+class GroundTruthUpload(Base):
+    """A lab tenant's uploaded RWC/proline/MDA/chlorophyll assay CSV (section 7's "ground
+    truth" onboarding flag, step 6 in the build order — storage only, not yet wired into
+    model recalibration). Raw bytes kept in the DB rather than a file store: this is a
+    local-first demo with no object storage, same reasoning as the ML artefacts under
+    backend/api/README.md's no-migration-tool note."""
+    __tablename__ = "ground_truth_uploads"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    tenant_id: Mapped[str] = mapped_column(ForeignKey("tenants.id"), nullable=False)
+    filename: Mapped[str] = mapped_column(String, nullable=False)
+    row_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    columns_json: Mapped[list] = mapped_column(JSON, nullable=False)
+    preview_json: Mapped[list] = mapped_column(JSON, nullable=False)  # first few rows, for display only
+    raw_csv: Mapped[str] = mapped_column(String, nullable=False)
+    uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+    tenant: Mapped["Tenant"] = relationship()
+
+
+class AlertLog(Base):
+    """One record of an alert that would have gone out — section 9's alerts row, logged so
+    Settings can show a history rather than only a one-shot test result. Delivery itself is
+    still stubbed (see routers/alerts.py); this table is the record of the stub firing."""
+    __tablename__ = "alert_logs"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    tenant_id: Mapped[str] = mapped_column(ForeignKey("tenants.id"), nullable=False)
+    channel: Mapped[str] = mapped_column(String, nullable=False)  # "email" | "webhook"
+    destination: Mapped[str] = mapped_column(String, nullable=False)
+    message: Mapped[str] = mapped_column(String, nullable=False)
+    simulated: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+    tenant: Mapped["Tenant"] = relationship()

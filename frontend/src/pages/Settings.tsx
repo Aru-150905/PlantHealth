@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { ApiError, api, type AlertPreference, type Role } from "../api/client"
+import { api, errorMessage, type AlertLog, type AlertPreference, type Role } from "../api/client"
 import { LogoutIcon, MoonIcon, SunIcon } from "../components/ui/Icon"
 import { useToast } from "../components/ui/Toast"
 import { SUPPORTED_LOCALES, useT } from "../i18n"
@@ -23,6 +23,7 @@ export default function Settings() {
   const [alertPref, setAlertPref] = useState<AlertPreference | null>(null)
   const [emailInput, setEmailInput] = useState("")
   const [webhookInput, setWebhookInput] = useState("")
+  const [alertHistory, setAlertHistory] = useState<AlertLog[] | null>(null)
 
   useEffect(() => {
     api.getAlertPreference().then((p) => {
@@ -30,6 +31,7 @@ export default function Settings() {
       setEmailInput(p.alert_email ?? "")
       setWebhookInput(p.alert_webhook_url ?? "")
     })
+    api.alertHistory().then(setAlertHistory).catch(() => setAlertHistory([]))
   }, [])
 
   async function changeRole(role: Role) {
@@ -56,7 +58,7 @@ export default function Settings() {
       setAlertPref(p)
       toast.success("Alert preferences saved.")
     } catch (err) {
-      toast.error(err instanceof ApiError ? (err.detail as { message?: string })?.message ?? String(err.detail) : "Could not save.")
+      toast.error(errorMessage(err, "Could not save."))
     }
   }
 
@@ -64,8 +66,9 @@ export default function Settings() {
     try {
       const r = await api.testAlert()
       toast.info(r.message)
+      setAlertHistory(await api.alertHistory())
     } catch (err) {
-      toast.error(err instanceof ApiError ? (err.detail as { message?: string })?.message ?? String(err.detail) : "Could not send.")
+      toast.error(errorMessage(err, "Could not send."))
     }
   }
 
@@ -159,6 +162,21 @@ export default function Settings() {
             <div className="flex gap-2">
               <button onClick={saveAlerts} className="text-xs px-3 py-1.5 rounded-lg bg-gray-800 dark:bg-gray-700 text-white hover:bg-gray-700 dark:hover:bg-gray-600 transition-colors cursor-pointer">Save</button>
               <button onClick={sendTest} className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-leaf-500 transition-colors cursor-pointer">Send test alert</button>
+            </div>
+          )}
+
+          {alertHistory && alertHistory.length > 0 && (
+            <div className="space-y-1.5 pt-1">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Recent alerts</p>
+              <ul className="space-y-1 max-h-40 overflow-y-auto">
+                {alertHistory.map((log) => (
+                  <li key={log.id} className="text-xs text-gray-500 dark:text-gray-400 border-l-2 border-gray-200 dark:border-gray-600 pl-2">
+                    <span className="text-gray-700 dark:text-gray-300 font-medium capitalize">{log.channel}</span>
+                    {" to "}{log.destination} · {new Date(log.created_at).toLocaleString()}
+                    {log.simulated && <span className="text-amber-700 dark:text-amber-400"> (simulated)</span>}
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
         </div>

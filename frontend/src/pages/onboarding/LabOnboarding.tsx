@@ -199,7 +199,7 @@ export default function LabOnboarding() {
               <input type="file" accept=".csv" onChange={(e) => setAssayFile(e.target.files?.[0] ?? null)} className="text-sm" />
               <p className="text-xs text-gray-400 dark:text-gray-500">
                 {assayFile ? `${assayFile.name} selected — ` : ""}
-                CSV upload wiring lands with the lab view (step 6); recorded here so it's not lost.
+                Upload the actual file from the lab view once your account is set up.
               </p>
             </div>
           )}

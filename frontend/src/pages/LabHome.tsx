@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react"
 import { Link } from "react-router-dom"
 import {
-  ApiError, api, type ConfoundPanelOut, type ExplainOut, type FeaturesOut,
+  ApiError, api, errorMessage, type ConfoundPanelOut, type ExplainOut, type FeaturesOut,
   type OnboardingOut, type PlantOut, type PredictionResult,
 } from "../api/client"
 import ConfoundPanelComponent from "../components/ConfoundPanel"
 import FeatureTable from "../components/FeatureTable"
+import GroundTruthUploader from "../components/GroundTruthUploader"
 import ShapPanel from "../components/ShapPanel"
 import WaveformViewer from "../components/WaveformViewer"
 import { CardSkeleton } from "../components/ui/Skeleton"
@@ -72,7 +73,7 @@ export default function LabHome() {
           try {
             setExplain(await api.explain(first.id))
           } catch (err) {
-            setExplainError(err instanceof ApiError ? (err.detail as { message?: string })?.message ?? String(err.detail) : null)
+            setExplainError(err instanceof ApiError ? errorMessage(err) : null)
           }
           if (pred.result.full_probability_vector) {
             // Pro tier only (same gate the backend enforces) — fetched as an authenticated
@@ -90,7 +91,7 @@ export default function LabHome() {
           // non-critical panel — don't fail the whole page load over it
         }
       } catch (err) {
-        setLoadError(err instanceof ApiError ? String(err.detail) : "Something went wrong loading this replicate.")
+        setLoadError(errorMessage(err, "Something went wrong loading this replicate."))
       } finally {
         setLoading(false)
       }
@@ -249,11 +250,10 @@ export default function LabHome() {
           </Card>
         )}
 
-        {lab?.has_ground_truth_assay && (
-          <p className="text-xs text-gray-400 dark:text-gray-500">
-            Ground-truth assay data flagged as available — upload wiring for supervised
-            recalibration against it is not yet built.
-          </p>
+        {!loading && lab && (
+          <Card title="Ground-truth assay data" subtitle="RWC / proline / MDA / chlorophyll, with timepoints">
+            <GroundTruthUploader />
+          </Card>
         )}
 
         <p className="text-center text-xs text-gray-400 dark:text-gray-600">Tier: {tenant?.tier}</p>

@@ -336,3 +336,25 @@ class TestAlertOut(BaseModel):
     channel: str
     destination: str
     message: str
+
+
+class AlertLogOut(BaseModel):
+    id: str
+    channel: str
+    destination: str
+    message: str
+    simulated: bool
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class GroundTruthUploadOut(BaseModel):
+    id: str
+    filename: str
+    row_count: int
+    columns: list[str]
+    preview: list[dict]
+    uploaded_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)

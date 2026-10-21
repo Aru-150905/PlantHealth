@@ -17,8 +17,8 @@ from sqlalchemy.orm import Session
 
 from ..db import get_db
 from ..deps import get_current_tenant
-from ..models import Tenant
-from ..schemas import AlertPreferenceOut, AlertPreferenceRequest, TestAlertOut
+from ..models import AlertLog, Tenant
+from ..schemas import AlertLogOut, AlertPreferenceOut, AlertPreferenceRequest, TestAlertOut
 from ..tiers import limits_for
 
 router = APIRouter(prefix="/tenants/me/alerts", tags=["alerts"])
@@ -63,7 +63,7 @@ def set_alert_preference(
 
 
 @router.post("/test", response_model=TestAlertOut)
-def send_test_alert(tenant: Tenant = Depends(get_current_tenant)):
+def send_test_alert(tenant: Tenant = Depends(get_current_tenant), db: Session = Depends(get_db)):
     limits = limits_for(tenant.tier)
     if limits.alerts == "none":
         raise HTTPException(status_code=403, detail={
@@ -75,11 +75,23 @@ def send_test_alert(tenant: Tenant = Depends(get_current_tenant)):
     if not destination:
         raise HTTPException(status_code=400, detail="Set an alert email or webhook URL first.")
     channel = "webhook" if destination == tenant.alert_webhook_url else "email"
-    return TestAlertOut(
-        simulated=True, channel=channel, destination=destination,
-        message=(
-            f"[SIMULATED — not actually sent] PlantHealth alert for {tenant.name}: "
-            f"a block looks stressed. This is a demo build with no real email/webhook "
-            f"delivery wired up — see backend/api/routers/alerts.py."
-        ),
+    message = (
+        f"[SIMULATED — not actually sent] PlantHealth alert for {tenant.name}: "
+        f"a block looks stressed. This is a demo build with no real email/webhook "
+        f"delivery wired up — see backend/api/routers/alerts.py."
     )
+    db.add(AlertLog(tenant_id=tenant.id, channel=channel, destination=destination, message=message, simulated=True))
+    db.commit()
+    return TestAlertOut(simulated=True, channel=channel, destination=destination, message=message)
+
+
+@router.get("/history", response_model=list[AlertLogOut])
+def alert_history(tenant: Tenant = Depends(get_current_tenant), db: Session = Depends(get_db)):
+    logs = (
+        db.query(AlertLog)
+        .filter(AlertLog.tenant_id == tenant.id)
+        .order_by(AlertLog.created_at.desc())
+        .limit(50)
+        .all()
+    )
+    return logs

@@ -16,6 +16,21 @@ export class ApiError extends Error {
   }
 }
 
+/** Turns any ApiError.detail shape into a readable string: a plain string detail, our own
+ * `{message: ...}` error bodies, or FastAPI/Pydantic's `[{msg, loc, ...}, ...]` validation
+ * error list (e.g. an invalid email) — which otherwise stringifies as "[object Object]". */
+export function errorMessage(err: unknown, fallback = "Something went wrong."): string {
+  if (!(err instanceof ApiError)) return fallback
+  const d = err.detail
+  if (typeof d === "string") return d
+  if (Array.isArray(d)) {
+    const msgs = d.map((e) => (e && typeof e === "object" && "msg" in e ? String((e as { msg: unknown }).msg) : null)).filter(Boolean)
+    if (msgs.length) return msgs.join(" ")
+  }
+  if (d && typeof d === "object" && "message" in d) return String((d as { message: unknown }).message)
+  return fallback
+}
+
 let authToken: string | null = null
 export function setAuthToken(token: string | null) {
   authToken = token
@@ -24,7 +39,11 @@ export function setAuthToken(token: string | null) {
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const headers: Record<string, string> = { ...(init?.headers as Record<string, string>) }
   if (authToken) headers["Authorization"] = `Bearer ${authToken}`
-  if (init?.body && !(init.body instanceof URLSearchParams)) headers["Content-Type"] = "application/json"
+  // FormData needs the browser to set its own multipart Content-Type (with boundary) —
+  // same reasoning as the URLSearchParams exception just above.
+  if (init?.body && !(init.body instanceof URLSearchParams) && !(init.body instanceof FormData)) {
+    headers["Content-Type"] = "application/json"
+  }
 
   const res = await fetch(`${BASE}${path}`, { ...init, headers })
   if (!res.ok) {
@@ -66,7 +85,7 @@ async function fetchAuthenticatedBlobUrl(path: string): Promise<string> {
  * properties) and the server would see an empty body, not the form fields. */
 function encodeBody(body: unknown): BodyInit | undefined {
   if (body === undefined) return undefined
-  if (body instanceof URLSearchParams) return body
+  if (body instanceof URLSearchParams || body instanceof FormData) return body
   return JSON.stringify(body)
 }
 
@@ -328,6 +347,24 @@ export interface TestAlertResult {
   message: string
 }
 
+export interface AlertLog {
+  id: string
+  channel: string
+  destination: string
+  message: string
+  simulated: boolean
+  created_at: string
+}
+
+export interface GroundTruthUpload {
+  id: string
+  filename: string
+  row_count: number
+  columns: string[]
+  preview: Record<string, string>[]
+  uploaded_at: string
+}
+
 export interface TierLimits {
   max_sentinel_devices: number | null
   max_plants_covered: number | null
@@ -387,6 +424,15 @@ export const api = {
   setAlertPreference: (body: { alert_email?: string | null; alert_webhook_url?: string | null }) =>
     put<AlertPreference>("/tenants/me/alerts", body),
   testAlert: () => post<TestAlertResult>("/tenants/me/alerts/test", {}),
+  alertHistory: () => get<AlertLog[]>("/tenants/me/alerts/history"),
+
+  uploadGroundTruthAssay: (file: File) => {
+    const form = new FormData()
+    form.append("file", file)
+    return post<GroundTruthUpload>("/tenants/me/ground-truth-assay", form)
+  },
+  listGroundTruthAssays: () => get<GroundTruthUpload[]>("/tenants/me/ground-truth-assay"),
+  deleteGroundTruthAssay: (id: string) => del(`/tenants/me/ground-truth-assay/${id}`),
 
   del,
 }
