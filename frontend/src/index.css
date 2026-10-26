@@ -160,3 +160,31 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .animate-bob { animation: none; }
 }
+
+/* Guide character motion (components/guide/GuideAvatar.tsx). transform-box: fill-box makes
+   each part rotate around its own centre/edge rather than the SVG origin. */
+.guide-avatar .guide-body { transform-box: fill-box; transform-origin: 50% 100%; animation: guide-sway 4s ease-in-out infinite; }
+.guide-avatar .guide-eyes { transform-box: fill-box; transform-origin: 50% 50%; animation: guide-blink 4.5s infinite; }
+.guide-avatar .guide-head { transform-box: fill-box; transform-origin: 50% 90%; }
+.guide-avatar.guide-nod .guide-head { animation: guide-nod 0.9s ease-in-out 2; }
+.guide-avatar.guide-happy { animation: guide-hop 0.7s ease-out 2; }
+.guide-avatar .guide-arm-point { transform-box: fill-box; transform-origin: 0% 0%; animation: guide-point 1.6s ease-in-out infinite; }
+@keyframes guide-sway { 0%, 100% { transform: rotate(-1.5deg); } 50% { transform: rotate(1.5deg); } }
+@keyframes guide-blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.1); } }
+@keyframes guide-nod { 0%, 100% { transform: rotate(0); } 40% { transform: rotate(8deg); } }
+@keyframes guide-hop { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-8px); } }
+@keyframes guide-point { 0%, 100% { transform: rotate(-35deg); } 50% { transform: rotate(-55deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .guide-avatar, .guide-avatar * { animation: none !important; }
+}
+
+/* speech bubble tail */
+.bubble-tail::before {
+  content: "";
+  position: absolute;
+  left: -8px;
+  bottom: 18px;
+  border: 8px solid transparent;
+  border-right-color: var(--bubble-bg, #fff);
+  border-left: 0;
+}

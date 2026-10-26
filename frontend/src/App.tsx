@@ -1,7 +1,8 @@
 import type { ReactNode } from "react"
-import { Navigate, Route, Routes } from "react-router-dom"
+import { Navigate, Route, Routes, useLocation } from "react-router-dom"
 import AdminDashboard from "./pages/AdminDashboard"
 import FarmerHome from "./pages/FarmerHome"
+import GuidePicker from "./pages/GuidePicker"
 import LabHome from "./pages/LabHome"
 import Login from "./pages/Login"
 import FarmerOnboarding from "./pages/onboarding/FarmerOnboarding"
@@ -21,11 +22,17 @@ import { useT } from "./i18n"
  * lives, not scattered per-page checks. */
 function Gate({ children }: { children: ReactNode }) {
   const { token, tenant, onboarding, loading } = useAuth()
+  const location = useLocation()
 
   if (loading) return <Loading />
   if (!token || !tenant) return <Navigate to="/welcome" replace />
   if (tenant.role === "unset") return <Navigate to="/role" replace />
 
+  // growers pick their helper once before anything else (accounts made before the helper
+  // existed get asked too, then land back where they were going)
+  if ((tenant.role === "farmer" || tenant.role === "both") && !tenant.guide_character) {
+    return <Navigate to={`/guide?next=${encodeURIComponent(location.pathname)}`} replace />
+  }
   const pending = nextOnboardingPath(tenant.role, onboarding)
   if (pending) return <Navigate to={pending} replace />
   return <>{children}</>
@@ -46,6 +53,7 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/role" element={<RequireAccount><RoleChoice /></RequireAccount>} />
+      <Route path="/guide" element={<RequireAccount><GuidePicker /></RequireAccount>} />
       <Route path="/onboarding/farmer" element={<RequireAccount><FarmerOnboarding /></RequireAccount>} />
       <Route path="/onboarding/lab" element={<RequireAccount><LabOnboarding /></RequireAccount>} />
       <Route path="/farmer" element={<Gate><FarmerHome /></Gate>} />
