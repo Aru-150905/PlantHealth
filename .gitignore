@@ -27,3 +27,5 @@ backend/ml/models/
 # Env
 .env
 .env.local
+
+.superpowers/
