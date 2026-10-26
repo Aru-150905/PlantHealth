@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react"
+import { readStoredLocale } from "./locale"
 import { api, setAuthToken, type OnboardingOut, type Tenant, type Tier } from "../api/client"
 
 const TOKEN_KEY = "planthealth.token"
@@ -74,7 +75,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [loadAccount])
 
   const register = useCallback(async (tenant_name: string, email: string, password: string, tier: Tier) => {
-    const res = await api.register({ tenant_name, email, password, tier })
+    // the language picked on the welcome/login screens becomes the account's language
+    const res = await api.register({ tenant_name, email, password, tier, language: readStoredLocale() })
     localStorage.setItem(TOKEN_KEY, res.access_token)
     setAuthToken(res.access_token)
     await loadAccount()

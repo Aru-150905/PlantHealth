@@ -109,7 +109,10 @@ export interface Tenant {
   suspended: boolean
   onboarding_completed: boolean
   language: string
+  guide_character: GuideCharacter | null
 }
+
+export type GuideCharacter = "didi" | "bhaiya"
 
 export interface TokenResponse {
   access_token: string
@@ -356,6 +359,22 @@ export interface AlertLog {
   created_at: string
 }
 
+/** One simulated irrigation/fertiliser run — see backend/api/routers/actuators.py. */
+export interface ActuatorAction {
+  id: string
+  plant_id: string
+  kind: ActuatorKind
+  method: string | null
+  duration_min: number
+  started_at: string
+  ends_at: string
+  stopped_at: string | null
+  running: boolean
+  simulated: boolean
+}
+
+export type ActuatorKind = "irrigation" | "fertiliser"
+
 export interface GroundTruthUpload {
   id: string
   filename: string
@@ -379,7 +398,7 @@ export interface TierLimits {
 }
 
 export const api = {
-  register: (body: { tenant_name: string; email: string; password: string; tier: Tier }) =>
+  register: (body: { tenant_name: string; email: string; password: string; tier: Tier; language: string }) =>
     post<TokenResponse>("/auth/register", body),
   login: (email: string, password: string) => {
     const form = new URLSearchParams({ username: email, password })
@@ -391,6 +410,7 @@ export const api = {
   myTierLimits: () => get<{ tier: Tier; limits: TierLimits }>("/tenants/me/tier-limits"),
   setRole: (role: Role) => put<Tenant>("/tenants/me/role", { role }),
   setLanguage: (language: string) => put<Tenant>("/tenants/me/language", { language }),
+  setGuide: (guide_character: GuideCharacter) => put<Tenant>("/tenants/me/guide", { guide_character }),
   getOnboarding: () => get<OnboardingOut>("/tenants/me/onboarding"),
   submitFarmerOnboarding: (body: Partial<FarmerProfile>) =>
     put<OnboardingOut>("/tenants/me/onboarding/farmer", body),
@@ -406,6 +426,11 @@ export const api = {
   field: (plantId: string, blockSize?: number) =>
     get<FieldOut>(`/plants/${plantId}/field${blockSize ? `?block_size=${blockSize}` : ""}`),
   trend: (plantId: string, days: 1 | 7) => get<TrendOut>(`/plants/${plantId}/trend?days=${days}`),
+  listActions: (plantId: string) => get<ActuatorAction[]>(`/plants/${plantId}/actions`),
+  startAction: (plantId: string, body: { kind: ActuatorKind; duration_min: number }) =>
+    post<ActuatorAction>(`/plants/${plantId}/actions`, body),
+  stopAction: (plantId: string, actionId: string) =>
+    post<ActuatorAction>(`/plants/${plantId}/actions/${actionId}/stop`, {}),
 
   signal: (plantId: string, durationMinutes: number, offsetMinutes: number) =>
     get<SignalOut>(`/plants/${plantId}/signal?duration_minutes=${durationMinutes}&offset_minutes=${offsetMinutes}`),
