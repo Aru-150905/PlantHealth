@@ -2,6 +2,7 @@ import {
   Area, AreaChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts"
 import type { TrendPoint } from "../api/client"
+import { useT } from "../i18n"
 
 /**
  * Section 6: "Trend over the last 24 hours / 7 days — is it getting worse?" Single series
@@ -15,6 +16,7 @@ import type { TrendPoint } from "../api/client"
  * built on invented numbers.
  */
 export default function TrendChart({ points, days }: { points: TrendPoint[]; days: 1 | 7 }) {
+  const { t } = useT()
   const data = points.map((p) => {
     const r = p.result
     // unified 0-100 "how stressed does this look" axis: a healthy reading contributes 0,
@@ -23,8 +25,8 @@ export default function TrendChart({ points, days }: { points: TrendPoint[]; day
     const value = r.unknown ? null : r.stressed ? (r.confidence_pct ?? 0) : 0
     return {
       label: days === 1
-        ? `${Math.round(p.days_ago * 24)}h ago`
-        : p.days_ago < 0.5 ? "now" : `${Math.round(p.days_ago)}d ago`,
+        ? Math.round(p.days_ago * 24) === 0 ? t("trend.now") : t("trend.hours_ago", { n: Math.round(p.days_ago * 24) })
+        : p.days_ago < 0.5 ? t("trend.now") : t("trend.days_ago", { n: Math.round(p.days_ago) }),
       value,
       unknown: r.unknown,
     }
@@ -53,7 +55,7 @@ export default function TrendChart({ points, days }: { points: TrendPoint[]; day
           <Tooltip
             formatter={(value, _name, item) => {
               const unknown = (item?.payload as { unknown?: boolean } | undefined)?.unknown
-              return unknown ? ["not sure yet", "stress level"] : [`${value}%`, "stress level"]
+              return unknown ? [t("trend.not_sure"), t("trend.stress_level")] : [`${value}%`, t("trend.stress_level")]
             }}
             contentStyle={{
               background: "var(--chart-surface)", border: "1px solid var(--chart-gridline)",
