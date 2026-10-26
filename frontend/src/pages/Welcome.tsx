@@ -34,10 +34,10 @@ export default function Welcome() {
             ))}
           </ul>
           <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto md:mx-0">
-            <Link to="/register" className="btn-3d flex-1 text-center rounded-2xl bg-leaf-600 hover:bg-leaf-700 text-white text-lg font-semibold py-4 px-6">
+            <Link to="/register" className="btn-3d flex-1 flex items-center justify-center text-center rounded-2xl bg-leaf-600 hover:bg-leaf-700 text-white text-lg font-semibold py-4 px-6">
               {t("welcome.get_started")}
             </Link>
-            <Link to="/login" className="btn-3d flex-1 text-center rounded-2xl bg-white dark:bg-gray-800 text-leaf-700 dark:text-leaf-500 text-lg font-semibold py-4 px-6">
+            <Link to="/login" className="btn-3d flex-1 flex items-center justify-center text-center rounded-2xl bg-white dark:bg-gray-800 text-leaf-700 dark:text-leaf-500 text-lg font-semibold py-4 px-6">
               {t("welcome.login")}
             </Link>
           </div>

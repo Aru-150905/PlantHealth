@@ -31,12 +31,12 @@ function stemCurve(lean: number) {
 }
 
 function Leaflet({ style, position, scale }: { style: MoodStyle; position: [number, number, number]; scale: number }) {
-  const width = 0.13 * (1 - style.curl * 0.55) * scale
+  const width = 0.15 * (1 - style.curl * 0.55) * scale
   return (
-    <group position={position}>
-      <mesh scale={[0.2 * scale, 0.025 * scale, width]} castShadow>
-        <sphereGeometry args={[1, 18, 10]} />
-        <meshStandardMaterial color={style.leaf} roughness={0.65} side={THREE.DoubleSide} />
+    <group position={position} rotation={[0.25, 0, 0]}>
+      <mesh scale={[0.2 * scale, 0.04 * scale, width]}>
+        <sphereGeometry args={[1, 20, 12]} />
+        <meshStandardMaterial color={style.leaf} roughness={0.55} emissive={style.leaf} emissiveIntensity={0.12} />
       </mesh>
       {style.scorch > 0.05 && (
         <mesh position={[0.15 * scale, 0, 0]} scale={[0.07 * scale * style.scorch, 0.028 * scale, width * 0.7]}>
@@ -61,9 +61,11 @@ function Branch({ style, curve, at, angle, length }: {
           <cylinderGeometry args={[0.012, 0.018, length, 6]} />
           <meshStandardMaterial color="#4f7d2a" roughness={0.7} />
         </mesh>
-        <Leaflet style={style} position={[length * 0.45, 0.01, 0.1]} scale={0.8} />
-        <Leaflet style={style} position={[length * 0.45, 0.01, -0.1]} scale={0.8} />
-        <Leaflet style={style} position={[length * 0.95, 0, 0]} scale={1} />
+        <Leaflet style={style} position={[length * 0.3, 0.01, 0.11]} scale={0.65} />
+        <Leaflet style={style} position={[length * 0.3, 0.01, -0.11]} scale={0.65} />
+        <Leaflet style={style} position={[length * 0.62, 0.01, 0.12]} scale={0.8} />
+        <Leaflet style={style} position={[length * 0.62, 0.01, -0.12]} scale={0.8} />
+        <Leaflet style={style} position={[length * 0.98, 0, 0]} scale={1} />
       </group>
     </group>
   )
@@ -82,7 +84,7 @@ function Pot({ style }: { style: MoodStyle }) {
   )
   return (
     <group position={[0, -0.74, 0]}>
-      <mesh geometry={potGeo} castShadow receiveShadow>
+      <mesh geometry={potGeo} >
         <meshStandardMaterial color="#c0603a" roughness={0.8} side={THREE.DoubleSide} />
       </mesh>
       <mesh position={[0, 0.69, 0]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -134,7 +136,7 @@ function Plant({ look, spin, reducedMotion }: {
     <group ref={root}>
       <Pot style={style} />
       <group ref={foliage}>
-        <mesh geometry={stemGeo} castShadow>
+        <mesh geometry={stemGeo}>
           <meshStandardMaterial color="#4f7d2a" roughness={0.6} />
         </mesh>
         {BRANCHES.map(([at, angle, length], i) => (
@@ -144,7 +146,7 @@ function Plant({ look, spin, reducedMotion }: {
           const p = curve.getPoint(at)
           return (
             <group key={i} position={p} rotation={[0, angle, 0]}>
-              <mesh position={[0.17, -0.12, 0]} castShadow>
+              <mesh position={[0.17, -0.12, 0]}>
                 <sphereGeometry args={[0.085, 20, 16]} />
                 <meshStandardMaterial color={style.fruit} roughness={0.35} />
               </mesh>
@@ -156,12 +158,28 @@ function Plant({ look, spin, reducedMotion }: {
           )
         })}
       </group>
-      {/* soft contact shadow under the pot */}
-      <mesh position={[0, -0.739, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[0.85, 32]} />
-        <meshBasicMaterial color="#000" transparent opacity={0.12} />
-      </mesh>
     </group>
+  )
+}
+
+/** Soft radial shadow under the pot (doesn't rotate with the plant). */
+function ContactShadow() {
+  const texture = useMemo(() => {
+    const c = document.createElement("canvas")
+    c.width = c.height = 128
+    const ctx = c.getContext("2d")!
+    const g = ctx.createRadialGradient(64, 64, 4, 64, 64, 64)
+    g.addColorStop(0, "rgba(30,20,10,0.38)")
+    g.addColorStop(1, "rgba(30,20,10,0)")
+    ctx.fillStyle = g
+    ctx.fillRect(0, 0, 128, 128)
+    return new THREE.CanvasTexture(c)
+  }, [])
+  return (
+    <mesh position={[0, -0.739, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <planeGeometry args={[1.9, 1.9]} />
+      <meshBasicMaterial map={texture} transparent depthWrite={false} />
+    </mesh>
   )
 }
 
@@ -215,15 +233,17 @@ export default function Plant3D({
     <Canvas
       frameloop={active ? "always" : "never"}
       dpr={[1, 1.75]}
-      camera={{ position: [0, 0.75, 4.1], fov: 34 }}
-      onCreated={({ camera }) => camera.lookAt(0, 0.35, 0)}
+      camera={{ position: [0, 0.95, 4.5], fov: 34 }}
+      onCreated={({ camera }) => camera.lookAt(0, 0.42, 0)}
       style={{ touchAction: interactive ? "pan-y" : "auto", cursor: interactive ? "grab" : "default" }}
       gl={{ antialias: true, alpha: true }}
     >
-      <hemisphereLight args={[warm > 0 ? "#ffe2b8" : "#f4fbff", "#5b4630", 1.1 + warm * 0.4]} />
+      <ambientLight intensity={0.45} />
+      <hemisphereLight args={[warm > 0 ? "#ffe2b8" : "#f4fbff", "#7a6040", 1.0 + warm * 0.4]} />
       <directionalLight position={[2.5, 4, 3]} intensity={1.6} color={warm > 0 ? "#ffd59a" : "#ffffff"} />
       <directionalLight position={[-3, 1.5, -2]} intensity={0.35} color="#bcd7ff" />
       <Plant look={look} spin={spin} reducedMotion={reducedMotion} />
+      <ContactShadow />
       {interactive && <DragSpin spin={spin} />}
     </Canvas>
   )
