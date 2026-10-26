@@ -7,10 +7,12 @@ import Login from "./pages/Login"
 import FarmerOnboarding from "./pages/onboarding/FarmerOnboarding"
 import LabOnboarding from "./pages/onboarding/LabOnboarding"
 import Register from "./pages/Register"
+import Welcome from "./pages/Welcome"
 import RoleChoice from "./pages/RoleChoice"
 import Settings from "./pages/Settings"
 import { nextOnboardingPath } from "./state/onboardingRouting"
 import { useAuth } from "./state/auth"
+import { useT } from "./i18n"
 
 /** Routes the user to wherever their account's state actually says they should be —
  * unset role -> the first-run question, incomplete onboarding -> the right wizard (for a
@@ -20,8 +22,8 @@ import { useAuth } from "./state/auth"
 function Gate({ children }: { children: ReactNode }) {
   const { token, tenant, onboarding, loading } = useAuth()
 
-  if (loading) return <div className="min-h-dvh flex items-center justify-center bg-leaf-50 dark:bg-gray-900 text-gray-400 dark:text-gray-500">Loading…</div>
-  if (!token || !tenant) return <Navigate to="/login" replace />
+  if (loading) return <Loading />
+  if (!token || !tenant) return <Navigate to="/welcome" replace />
   if (tenant.role === "unset") return <Navigate to="/role" replace />
 
   const pending = nextOnboardingPath(tenant.role, onboarding)
@@ -40,6 +42,7 @@ function HomeRedirect() {
 export default function App() {
   return (
     <Routes>
+      <Route path="/welcome" element={<Welcome />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/role" element={<RequireAccount><RoleChoice /></RequireAccount>} />
@@ -61,7 +64,12 @@ export default function App() {
  * settings pages themselves need to be reachable precisely when onboarding isn't done. */
 function RequireAccount({ children }: { children: ReactNode }) {
   const { token, tenant, loading } = useAuth()
-  if (loading) return <div className="min-h-dvh flex items-center justify-center bg-leaf-50 dark:bg-gray-900 text-gray-400 dark:text-gray-500">Loading…</div>
-  if (!token || !tenant) return <Navigate to="/login" replace />
+  if (loading) return <Loading />
+  if (!token || !tenant) return <Navigate to="/welcome" replace />
   return <>{children}</>
+}
+
+function Loading() {
+  const { t } = useT()
+  return <div className="min-h-dvh flex items-center justify-center bg-leaf-50 dark:bg-gray-900 text-gray-400 dark:text-gray-500">{t("common.loading")}</div>
 }
