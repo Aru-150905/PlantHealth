@@ -67,6 +67,9 @@ class Tenant(Base):
     onboarding_profile: Mapped[dict] = mapped_column(JSON, default=dict)
     onboarding_completed: Mapped[bool] = mapped_column(Boolean, default=False)
     language: Mapped[str] = mapped_column(String, default="en")  # section 5 Q9 (farmer); settings-changeable
+    # the farmer-side helper character ("didi" | "bhaiya"), picked once after sign-up and
+    # changeable in Settings; None until picked. See docs/superpowers/specs/2026-10-26-*.
+    guide_character: Mapped[str | None] = mapped_column(String, nullable=True)
 
     # section 9's "Alerts: No / Email / Email+webhook" row. Delivery itself is stubbed — no
     # SMTP/webhook infrastructure exists in this local-first build (same spirit as "stub the

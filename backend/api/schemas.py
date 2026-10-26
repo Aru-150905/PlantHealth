@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
@@ -15,6 +16,7 @@ class TenantOut(BaseModel):
     suspended: bool
     onboarding_completed: bool
     language: str
+    guide_character: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -24,6 +26,9 @@ class RegisterRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8)
     tier: Tier = Tier.basic
+    # chosen on the welcome/login screens before an account exists — see
+    # frontend/src/state/locale.ts; becomes the tenant's initial language
+    language: str = Field(default="en", min_length=2, max_length=10)
 
 
 class TokenResponse(BaseModel):
@@ -47,6 +52,10 @@ class RoleUpdateRequest(BaseModel):
 
 class LanguageUpdateRequest(BaseModel):
     language: str = Field(min_length=2, max_length=10)
+
+
+class GuideUpdateRequest(BaseModel):
+    guide_character: Literal["didi", "bhaiya"]
 
 
 # --------------------------------------------------------------------------------------

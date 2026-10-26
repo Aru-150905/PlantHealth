@@ -18,7 +18,7 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
     if db.query(User).filter(User.email == body.email).first():
         raise HTTPException(status_code=409, detail="Email already registered")
 
-    tenant = Tenant(name=body.tenant_name, tier=body.tier)
+    tenant = Tenant(name=body.tenant_name, tier=body.tier, language=body.language)
     db.add(tenant)
     db.flush()  # assigns tenant.id
 

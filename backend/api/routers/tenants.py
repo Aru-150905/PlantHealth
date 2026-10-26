@@ -10,7 +10,7 @@ from ..ml_runtime import ModelNotTrainedError, runtime
 from ..models import Plant, Role, Tenant
 from ..schemas import (
     ConfoundClassStat, ConfoundPanelOut, FarmerOnboardingRequest, LabOnboardingRequest,
-    LanguageUpdateRequest, OnboardingOut, RoleUpdateRequest, TenantOut,
+    GuideUpdateRequest, LanguageUpdateRequest, OnboardingOut, RoleUpdateRequest, TenantOut,
 )
 from ..tiers import limits_for
 
@@ -107,6 +107,14 @@ def submit_lab_onboarding(
 @router.put("/me/language", response_model=TenantOut)
 def set_language(body: LanguageUpdateRequest, tenant: Tenant = Depends(get_current_tenant), db: Session = Depends(get_db)):
     tenant.language = body.language
+    db.commit()
+    db.refresh(tenant)
+    return tenant
+
+
+@router.put("/me/guide", response_model=TenantOut)
+def set_guide(body: GuideUpdateRequest, tenant: Tenant = Depends(get_current_tenant), db: Session = Depends(get_db)):
+    tenant.guide_character = body.guide_character
     db.commit()
     db.refresh(tenant)
     return tenant
