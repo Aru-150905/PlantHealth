@@ -123,13 +123,31 @@ def rescale_proba(proba: dict[str, float], new_top_confidence: float) -> dict[st
     """
     top_class = max(proba, key=proba.get)
     others = {k: v for k, v in proba.items() if k != top_class}
-    others_sum = sum(others.values())
     remainder = max(0.0, 1.0 - new_top_confidence)
-    if others_sum > 1e-9:
-        scaled_others = {k: v / others_sum * remainder for k, v in others.items()}
-    else:
-        share = remainder / len(others) if others else 0.0
-        scaled_others = {k: share for k in others}
+    # Hand the remainder out proportionally, but never let another class exceed the decayed
+    # top class: otherwise max(proba) — what the API reports as the cell's confidence — could
+    # RISE with distance and silently belong to a different class (found as an intermittent
+    # failure of test_field_endpoint_shows_decaying_confidence_across_rings). Classes that
+    # would overflow are capped at the top value and the excess re-shared among the rest.
+    # Always feasible here: cells below UNKNOWN_CONFIDENCE_FLOOR (0.40) never get rescaled,
+    # and 3 other classes x 0.40 >= the 0.60 maximum remainder.
+    scaled_others: dict[str, float] = {}
+    free = dict(others)
+    left = remainder
+    while free:
+        free_sum = sum(free.values())
+        if free_sum > 1e-9:
+            trial = {k: v / free_sum * left for k, v in free.items()}
+        else:
+            trial = {k: left / len(free) for k in free}
+        over = [k for k, v in trial.items() if v > new_top_confidence]
+        if not over:
+            scaled_others.update(trial)
+            break
+        for k in over:
+            scaled_others[k] = new_top_confidence
+            left -= new_top_confidence
+            del free[k]
     return {top_class: new_top_confidence, **scaled_others}
 
 

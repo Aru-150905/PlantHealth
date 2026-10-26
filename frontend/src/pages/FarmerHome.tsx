@@ -16,6 +16,7 @@ import TopBar from "../components/ui/TopBar"
 import { DownloadIcon, RefreshIcon, WarningIcon } from "../components/ui/Icon"
 import { useT } from "../i18n"
 import type { TranslationKey } from "../i18n/en"
+import { shouldSuggestIrrigation } from "../lib/irrigation"
 import { plantLook, type PlantLook } from "../lib/plantLook"
 import { useAuth } from "../state/auth"
 
@@ -283,7 +284,7 @@ export default function FarmerHome() {
               <ActionPanel
                 plantId={plant.id}
                 method={farmer?.watering_method}
-                suggestIrrigation={look.mood === "drought" && !!result?.diagnosis_remedy_available}
+                suggestIrrigation={shouldSuggestIrrigation(look, !!result?.diagnosis_remedy_available)}
               />
             </section>
           )}

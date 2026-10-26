@@ -23,7 +23,7 @@ const en = {
   "welcome.spin_hint": "Drag the plant to turn it",
   "welcome.point1": "See if your plants are thirsty, too hot, or troubled by salt",
   "welcome.point2": "A helper explains every step — in Hindi or English",
-  "welcome.point3": "Water and fertiliser buttons right in the app",
+  "welcome.point3": "Water and fertiliser buttons in the app (demo for now — real pumps can be connected later)",
 
   "auth.login.title": "Welcome back",
   "auth.login.subtitle": "Log in to see your plants.",
@@ -124,8 +124,6 @@ const en = {
   "season.all_year": "All year",
 
   "farmer.home.coverage": "Coverage",
-  "farmer.home.verdict.stressed": "This block looks water-stressed",
-  "farmer.home.verdict.healthy": "This block looks healthy",
   "farmer.home.confidence.fairly_sure": "fairly sure",
   "farmer.home.confidence.uncertain": "uncertain",
   "farmer.home.confidence.not_sure": "not sure yet — check back in a few hours",

@@ -34,7 +34,7 @@ const hi: Record<TranslationKey, string> = {
   "welcome.spin_hint": "पौधे को घुमाने के लिए उंगली से खींचें",
   "welcome.point1": "जानिए कि पौधे प्यासे हैं, गर्मी से परेशान हैं, या मिट्टी में नमक ज़्यादा है",
   "welcome.point2": "एक साथी हर कदम समझाएगा — हिंदी या अंग्रेज़ी में",
-  "welcome.point3": "पानी और खाद के बटन ऐप में ही",
+  "welcome.point3": "पानी और खाद के बटन ऐप में ही (अभी डेमो — असली पंप बाद में जोड़े जा सकते हैं)",
 
   "auth.login.title": "फिर से स्वागत है",
   "auth.login.subtitle": "अपने पौधे देखने के लिए लॉग इन करें।",
@@ -135,8 +135,6 @@ const hi: Record<TranslationKey, string> = {
   "season.all_year": "पूरे साल",
 
   "farmer.home.coverage": "कवरेज",
-  "farmer.home.verdict.stressed": "इस हिस्से में पानी की कमी लग रही है",
-  "farmer.home.verdict.healthy": "यह हिस्सा स्वस्थ लग रहा है",
   "farmer.home.confidence.fairly_sure": "काफ़ी भरोसा है",
   "farmer.home.confidence.uncertain": "पक्का नहीं",
   "farmer.home.confidence.not_sure": "अभी पक्का नहीं — कुछ घंटे बाद फिर देखें",

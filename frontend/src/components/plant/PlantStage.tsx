@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react"
 import type { PlantLook } from "../../lib/plantLook"
 import { hasWebGL, prefersReducedMotion } from "../../lib/webgl"
+import FallbackBoundary from "./FallbackBoundary"
 import PlantFallback from "./PlantFallback"
 
 const Plant3D = lazy(() => import("./Plant3D"))
@@ -16,6 +17,9 @@ export default function PlantStage({
   const box = useRef<HTMLDivElement>(null)
   const [visible, setVisible] = useState(true)
   const [webgl] = useState(hasWebGL)
+  // a lost GPU context (common on low-memory phones when the app is backgrounded) would
+  // otherwise leave an empty box — drop to the static plant instead
+  const [contextLost, setContextLost] = useState(false)
   const [reduced] = useState(prefersReducedMotion)
 
   useEffect(() => {
@@ -26,17 +30,20 @@ export default function PlantStage({
     return () => io.disconnect()
   }, [])
 
-  const height = size === "hero" ? "h-72 sm:h-96" : "h-56 sm:h-64"
+  const staticPlant = <div className="h-full w-full p-6"><PlantFallback look={look} /></div>
+  const height = size === "hero" ? "h-72 sm:h-96" : "h-56 sm:h-64 md:h-96"
   return (
     <div ref={box} className={`relative ${height} w-full select-none`} role="img" aria-label={label}>
       {/* soft ground glow so the plant sits on something rather than floating */}
       <div aria-hidden className="absolute inset-x-[15%] bottom-[6%] h-[22%] rounded-[50%] bg-leaf-500/15 dark:bg-leaf-500/10 blur-2xl" />
-      {webgl ? (
-        <Suspense fallback={<div className="h-full w-full p-6 opacity-70"><PlantFallback look={look} /></div>}>
-          <Plant3D look={look} interactive={interactive} active={visible} reducedMotion={reduced} />
-        </Suspense>
+      {webgl && !contextLost ? (
+        <FallbackBoundary fallback={staticPlant}>
+          <Suspense fallback={<div className="h-full w-full p-6 opacity-70"><PlantFallback look={look} /></div>}>
+            <Plant3D look={look} interactive={interactive} active={visible} reducedMotion={reduced} onContextLost={() => setContextLost(true)} />
+          </Suspense>
+        </FallbackBoundary>
       ) : (
-        <div className="h-full w-full p-6"><PlantFallback look={look} /></div>
+        staticPlant
       )}
       {look.uncertain && (
         <span

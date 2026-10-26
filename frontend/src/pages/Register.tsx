@@ -9,7 +9,7 @@ const TIERS: Tier[] = ["basic", "premium", "pro"]
 
 export default function Register() {
   const { register } = useAuth()
-  const { t } = useT()
+  const { t, locale } = useT()
   const navigate = useNavigate()
   const [tenantName, setTenantName] = useState("")
   const [email, setEmail] = useState("")
@@ -23,7 +23,7 @@ export default function Register() {
     setBusy(true)
     setError(null)
     try {
-      await register(tenantName, email, password, tier)
+      await register(tenantName, email, password, tier, locale)
       navigate("/") // -> role choice, since a new account's role is "unset"
     } catch {
       setError(t("auth.register.error"))

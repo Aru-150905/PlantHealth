@@ -10,7 +10,7 @@ interface AuthContextValue {
   onboarding: OnboardingOut | null
   loading: boolean
   login: (email: string, password: string) => Promise<void>
-  register: (tenantName: string, email: string, password: string, tier: Tier) => Promise<void>
+  register: (tenantName: string, email: string, password: string, tier: Tier, language?: string) => Promise<void>
   logout: () => void
   refreshTenant: () => Promise<void>
 }
@@ -74,9 +74,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(res.access_token)
   }, [loadAccount])
 
-  const register = useCallback(async (tenant_name: string, email: string, password: string, tier: Tier) => {
-    // the language picked on the welcome/login screens becomes the account's language
-    const res = await api.register({ tenant_name, email, password, tier, language: readStoredLocale() })
+  const register = useCallback(async (tenant_name: string, email: string, password: string, tier: Tier, language?: string) => {
+    // the language picked on the welcome/login screens becomes the account's language — the
+    // live choice passed in by Register, falling back to the stored one
+    const res = await api.register({ tenant_name, email, password, tier, language: language ?? readStoredLocale() })
     localStorage.setItem(TOKEN_KEY, res.access_token)
     setAuthToken(res.access_token)
     await loadAccount()

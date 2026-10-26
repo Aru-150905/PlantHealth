@@ -1,4 +1,4 @@
-import { StrictMode, useCallback, useEffect, useState } from "react"
+import { StrictMode, useCallback, useEffect, useRef, useState } from "react"
 import { createRoot } from "react-dom/client"
 import { BrowserRouter } from "react-router-dom"
 import App from "./App.tsx"
@@ -7,7 +7,7 @@ import { api } from "./api/client"
 import { ToastProvider } from "./components/ui/Toast"
 import { I18nProvider } from "./i18n"
 import { AuthProvider, useAuth } from "./state/auth"
-import { readStoredLocale, storeLocale } from "./state/locale"
+import { localeToCarryIntoAccount, readStoredLocale, storeLocale } from "./state/locale"
 import { ThemeProvider } from "./state/theme"
 
 /** Keeps the i18n locale in sync with the signed-in tenant's saved language (section 5
@@ -18,14 +18,32 @@ function LocalizedApp() {
   const [preLoginLocale, setPreLoginLocale] = useState(readStoredLocale)
   const locale = tenant?.language ?? preLoginLocale
 
+  // true once the language is switched while signed out, during this visit
+  const pickedBeforeLogin = useRef(false)
+
   const onLocaleChange = useCallback(async (l: string) => {
     storeLocale(l)
     setPreLoginLocale(l)
-    if (tenant) {
+    if (!tenant) {
+      pickedBeforeLogin.current = true
+      return
+    }
+    try {
       await api.setLanguage(l)
       await refreshTenant()
+    } catch {
+      // the switch still applies on this device (stored locally); the account keeps its old value
     }
   }, [tenant, refreshTenant])
+
+  useEffect(() => {
+    if (!tenant) return
+    const carry = localeToCarryIntoAccount({
+      pickedBeforeLogin: pickedBeforeLogin.current, chosen: preLoginLocale, accountLanguage: tenant.language,
+    })
+    pickedBeforeLogin.current = false
+    if (carry) api.setLanguage(carry).then(refreshTenant).catch(() => {})
+  }, [tenant, preLoginLocale, refreshTenant])
 
   useEffect(() => {
     document.documentElement.lang = locale

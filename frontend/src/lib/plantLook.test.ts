@@ -36,10 +36,16 @@ describe("plantLook", () => {
     expect(plantLook(result({ stressed: true, class_label: "heat", confidence_band: null, confidence_pct: 55 })).intensity).toBe(0.45)
   })
 
-  it("scales by Pro severity when present", () => {
-    expect(plantLook(result({ stressed: true, class_label: "salinity", confidence_pct: 72, severity: "moderate" })))
-      .toEqual({ mood: "salinity", intensity: 0.75, uncertain: true })
-    expect(plantLook(result({ stressed: true, class_label: "salinity", confidence_pct: 90, severity: "severe" })).intensity).toBe(1)
+  it("lets Pro severity scale symptom strength, but never makes a confident reading look unsure", () => {
+    // one rule on every tier: an 80% reading is confident on Basic/Premium, so it must be on Pro too
+    expect(plantLook(result({ stressed: true, class_label: "drought", confidence_band: null, confidence_pct: 80, severity: "moderate" })))
+      .toEqual({ mood: "drought", intensity: 0.75, uncertain: false })
+    expect(plantLook(result({ stressed: true, class_label: "salinity", confidence_band: null, confidence_pct: 90, severity: "severe" })).intensity).toBe(1)
+  })
+
+  it("keeps a weak Pro reading soft and uncertain whatever its severity", () => {
+    expect(plantLook(result({ stressed: true, class_label: "heat", confidence_band: null, confidence_pct: 55, severity: "mild" })))
+      .toEqual({ mood: "heat", intensity: 0.45, uncertain: true })
   })
 
   it("treats a class label of 'healthy' with stressed=true defensively as unwell", () => {

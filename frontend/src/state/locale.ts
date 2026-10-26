@@ -23,3 +23,12 @@ export function storeLocale(locale: string): void {
     // storage blocked — the choice just won't survive a reload
   }
 }
+
+/** If the language was switched on the welcome/login screen during this visit and differs
+ * from the account's saved one, the farmer's latest choice wins after login — a farmer who
+ * just tapped हिन्दी shouldn't be flipped back to English the moment they sign in. */
+export function localeToCarryIntoAccount({
+  pickedBeforeLogin, chosen, accountLanguage,
+}: { pickedBeforeLogin: boolean; chosen: string; accountLanguage: string }): string | null {
+  return pickedBeforeLogin && chosen !== accountLanguage ? chosen : null
+}

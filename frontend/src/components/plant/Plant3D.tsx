@@ -225,16 +225,19 @@ function DragSpin({ spin }: { spin: React.RefObject<{ angle: number; velocity: n
 }
 
 export default function Plant3D({
-  look, interactive = true, active = true, reducedMotion = false,
-}: { look: PlantLook; interactive?: boolean; active?: boolean; reducedMotion?: boolean }) {
+  look, interactive = true, active = true, reducedMotion = false, onContextLost,
+}: { look: PlantLook; interactive?: boolean; active?: boolean; reducedMotion?: boolean; onContextLost?: () => void }) {
   const spin = useRef({ angle: 0.6, velocity: 0, dragging: false })
   const warm = look.mood === "heat" ? look.intensity : 0
   return (
     <Canvas
-      frameloop={active ? "always" : "never"}
+      frameloop={!active ? "never" : reducedMotion && !interactive ? "demand" : "always"}
       dpr={[1, 1.75]}
       camera={{ position: [0, 0.95, 4.5], fov: 34 }}
-      onCreated={({ camera }) => camera.lookAt(0, 0.42, 0)}
+      onCreated={({ camera, gl }) => {
+        camera.lookAt(0, 0.42, 0)
+        gl.domElement.addEventListener("webglcontextlost", () => onContextLost?.(), { once: true })
+      }}
       style={{ touchAction: interactive ? "pan-y" : "auto", cursor: interactive ? "grab" : "default" }}
       gl={{ antialias: true, alpha: true }}
     >

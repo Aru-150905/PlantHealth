@@ -10,8 +10,8 @@ export default function AuthShell({ children }: { children: ReactNode }) {
     <div className="min-h-dvh ambient-leaf-bg flex flex-col">
       <TopBar />
       <main className="flex-1 w-full max-w-5xl mx-auto px-4 pb-10 grid md:grid-cols-2 gap-4 md:gap-8 items-center">
-        <div className="hidden md:block"><PlantStage look={DECORATIVE_LOOK} size="hero" /></div>
-        <div className="md:hidden -mb-2"><PlantStage look={DECORATIVE_LOOK} size="card" /></div>
+        {/* one plant (one GPU context), smaller on phones via PlantStage's responsive height */}
+        <div className="-mb-2 md:mb-0"><PlantStage look={DECORATIVE_LOOK} size="card" /></div>
         <div className="w-full max-w-md mx-auto">{children}</div>
       </main>
     </div>
