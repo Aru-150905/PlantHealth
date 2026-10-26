@@ -1,0 +1,43 @@
+/** Indian states and union territories, for the farmer "Where are you?" question — a pick
+ * list instead of a free-text box. The stored value is the English name (the profile's
+ * `region` was always a plain string); the Hindi name is only for display. */
+export const REGIONS: { en: string; hi: string }[] = [
+  { en: "Andhra Pradesh", hi: "आंध्र प्रदेश" },
+  { en: "Arunachal Pradesh", hi: "अरुणाचल प्रदेश" },
+  { en: "Assam", hi: "असम" },
+  { en: "Bihar", hi: "बिहार" },
+  { en: "Chhattisgarh", hi: "छत्तीसगढ़" },
+  { en: "Goa", hi: "गोवा" },
+  { en: "Gujarat", hi: "गुजरात" },
+  { en: "Haryana", hi: "हरियाणा" },
+  { en: "Himachal Pradesh", hi: "हिमाचल प्रदेश" },
+  { en: "Jharkhand", hi: "झारखंड" },
+  { en: "Karnataka", hi: "कर्नाटक" },
+  { en: "Kerala", hi: "केरल" },
+  { en: "Madhya Pradesh", hi: "मध्य प्रदेश" },
+  { en: "Maharashtra", hi: "महाराष्ट्र" },
+  { en: "Manipur", hi: "मणिपुर" },
+  { en: "Meghalaya", hi: "मेघालय" },
+  { en: "Mizoram", hi: "मिज़ोरम" },
+  { en: "Nagaland", hi: "नागालैंड" },
+  { en: "Odisha", hi: "ओडिशा" },
+  { en: "Punjab", hi: "पंजाब" },
+  { en: "Rajasthan", hi: "राजस्थान" },
+  { en: "Sikkim", hi: "सिक्किम" },
+  { en: "Tamil Nadu", hi: "तमिलनाडु" },
+  { en: "Telangana", hi: "तेलंगाना" },
+  { en: "Tripura", hi: "त्रिपुरा" },
+  { en: "Uttar Pradesh", hi: "उत्तर प्रदेश" },
+  { en: "Uttarakhand", hi: "उत्तराखंड" },
+  { en: "West Bengal", hi: "पश्चिम बंगाल" },
+  { en: "Andaman and Nicobar Islands", hi: "अंडमान और निकोबार द्वीप समूह" },
+  { en: "Chandigarh", hi: "चंडीगढ़" },
+  { en: "Dadra and Nagar Haveli and Daman and Diu", hi: "दादरा और नगर हवेली और दमन और दीव" },
+  { en: "Delhi", hi: "दिल्ली" },
+  { en: "Jammu and Kashmir", hi: "जम्मू और कश्मीर" },
+  { en: "Ladakh", hi: "लद्दाख" },
+  { en: "Lakshadweep", hi: "लक्षद्वीप" },
+  { en: "Puducherry", hi: "पुडुचेरी" },
+]
+
+export const SEASONS = ["kharif", "rabi", "zaid", "all_year"] as const
