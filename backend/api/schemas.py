@@ -367,3 +367,21 @@ class GroundTruthUploadOut(BaseModel):
     uploaded_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ActuatorStartRequest(BaseModel):
+    kind: Literal["irrigation", "fertiliser"]
+    duration_min: int = Field(ge=1, le=120)
+
+
+class ActuatorActionOut(BaseModel):
+    id: str
+    plant_id: str
+    kind: str
+    method: str | None
+    duration_min: int
+    started_at: datetime
+    ends_at: datetime
+    stopped_at: datetime | None
+    running: bool
+    simulated: bool

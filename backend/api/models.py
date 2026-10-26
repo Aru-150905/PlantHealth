@@ -192,3 +192,25 @@ class AlertLog(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
     tenant: Mapped["Tenant"] = relationship()
+
+
+class ActuatorAction(Base):
+    """One irrigation or fertiliser run the farmer started from the app. SIMULATED: no valve,
+    pump or relay exists in this project (the hardware only listens to the leaf), so nothing
+    physical happens — this row is the record of the demo, same pattern as AlertLog. The
+    seam where a real controller call would go is routers/actuators.py's
+    _dispatch_to_hardware(). Never created automatically — only from an explicit,
+    confirmed tap (spec: docs/superpowers/specs/2026-10-26-farmer-friendly-3d-redesign-design.md)."""
+    __tablename__ = "actuator_actions"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    tenant_id: Mapped[str] = mapped_column(ForeignKey("tenants.id"), nullable=False)
+    plant_id: Mapped[str] = mapped_column(ForeignKey("plants.id"), nullable=False)
+    kind: Mapped[str] = mapped_column(String, nullable=False)  # "irrigation" | "fertiliser"
+    # the farm's watering method at the time (drip/flood/sprinkler) for irrigation; None for fertiliser
+    method: Mapped[str | None] = mapped_column(String, nullable=True)
+    duration_min: Mapped[int] = mapped_column(Integer, nullable=False)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    ends_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    stopped_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    simulated: Mapped[bool] = mapped_column(Boolean, default=True)

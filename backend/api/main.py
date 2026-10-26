@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from . import models  # noqa: F401 — registers ORM models on Base before create_all
 from .db import Base, engine
-from .routers import admin, alerts, auth, devices, field, lab, plants, predict, tenants, ws
+from .routers import actuators, admin, alerts, auth, devices, field, lab, plants, predict, tenants, ws
 
 
 @asynccontextmanager
@@ -51,3 +51,4 @@ app.include_router(lab.assay_router)
 app.include_router(admin.router)
 app.include_router(alerts.router)
 app.include_router(ws.router)
+app.include_router(actuators.router)
