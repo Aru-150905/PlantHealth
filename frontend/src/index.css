@@ -148,3 +148,15 @@ body {
     0 4px 0 -2px rgba(0, 0, 0, 0.18),
     0 8px 14px -6px rgba(0, 0, 0, 0.3);
 }
+
+/* floating "?" over an uncertain plant */
+@keyframes bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.animate-bob {
+  animation: bob 2.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-bob { animation: none; }
+}
