@@ -28,9 +28,10 @@ function Gate({ children }: { children: ReactNode }) {
   if (!token || !tenant) return <Navigate to="/welcome" replace />
   if (tenant.role === "unset") return <Navigate to="/role" replace />
 
-  // growers pick their helper once before anything else (accounts made before the helper
-  // existed get asked too, then land back where they were going)
-  if ((tenant.role === "farmer" || tenant.role === "both") && !tenant.guide_character) {
+  // growers pick their helper once before the farmer side (accounts made before the helper
+  // existed get asked too, then land back where they were going). The lab side has no
+  // helper, so a "both" account heading to /lab isn't stopped for it.
+  if ((tenant.role === "farmer" || tenant.role === "both") && !tenant.guide_character && location.pathname !== "/lab") {
     return <Navigate to={`/guide?next=${encodeURIComponent(location.pathname)}`} replace />
   }
   const pending = nextOnboardingPath(tenant.role, onboarding)
